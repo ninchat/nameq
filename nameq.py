@@ -29,8 +29,8 @@ class Node(object):
 
 	def __init__(self, addr, names):
 		self.addr  = addr
-		self.names = names
-		self._str  = " ".join([self.addr] + self.names)
+		self.names = set(names)
+		self._str  = " ".join([self.addr] + list(sorted(self.names)))
 
 		if self.names:
 			log.debug("local address %s with name%s %s",
@@ -199,6 +199,7 @@ class Hosts(object):
 				combo[name].append((stamp, addr))
 
 		hosts = collections.defaultdict(list)
+		hosts[self.node.addr].extend(self.node.names)
 
 		for name, pairs in combo.iteritems():
 			pairs.sort()
