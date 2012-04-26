@@ -78,7 +78,7 @@ do_start()
 	export AWS_ACCESS_KEY_SECRET
 
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --test > /dev/null || return 1
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --background --make-pidfile --chuid nobody -- $SCRIPT $DAEMON_ARGS || return 2
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --background --make-pidfile --chuid dnsmasq -- $SCRIPT $DAEMON_ARGS || return 2
 }
 
 #

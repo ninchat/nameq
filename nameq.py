@@ -251,7 +251,7 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--port",           type=int, default=17105)
 	parser.add_argument("--hostsfile",      type=str, default="/var/lib/nameq/hosts")
-	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/sendsigs.omit.d/network-manager.dnsmasq.pid")
+	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
 	parser.add_argument("s3bucket",         type=str)

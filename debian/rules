@@ -6,9 +6,9 @@
 override_dh_install:
 	dh_install
 	install -m 755 nameq.py debian/nameq/usr/sbin/nameq
-	install -m 755 debian/dnsmasq.sh debian/nameq/usr/sbin/dnsmasq
+	install -m 644 debian/dnsmasq.d debian/nameq/etc/dnsmasq.d/nameq
 
 override_dh_fixperms:
 	dh_fixperms
-	chown nobody:root debian/nameq/var/lib/nameq
+	chown dnsmasq:root debian/nameq/var/lib/nameq
 	chmod 755 debian/nameq/var/lib/nameq
