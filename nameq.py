@@ -122,7 +122,7 @@ class Peers(object):
 
 		try:
 			for addr in addrs:
-				if addr != self.node.addr:
+				if not (addr == self.node.addr or addr.startswith("127.")):
 					log.debug("publishing to %s", addr)
 					pub.connect("tcp://{}:{}".format(addr, self.port))
 
