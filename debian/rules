@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ 
+
+override_dh_install:
+	dh_install
+	install -m 755 nameq.py debian/nameq/usr/sbin/nameq
+	install -m 755 debian/dnsmasq.sh debian/nameq/usr/sbin/dnsmasq
+
+override_dh_fixperms:
+	dh_fixperms
+	chown nobody:root debian/nameq/var/lib/nameq
+	chmod 755 debian/nameq/var/lib/nameq

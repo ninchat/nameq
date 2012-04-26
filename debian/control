@@ -1,0 +1,11 @@
+Source: nameq
+Section: other
+Priority: extra
+Maintainer: Timo Savola <timo.savola@somia.fi>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+
+Package: nameq
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, python-boto, python-zmq, dnsmasq-base
+Description: Local peer-to-peer DNS with dnsmasq, 0MQ and S3
