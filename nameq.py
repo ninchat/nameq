@@ -199,7 +199,7 @@ class Hosts(object):
 				combo[name].append((stamp, addr))
 
 		hosts = collections.defaultdict(list)
-		hosts[self.node.addr].extend(self.node.names)
+		hosts["127.0.0.1"].extend(self.node.names)
 
 		for name, pairs in combo.iteritems():
 			pairs.sort()
