@@ -23,8 +23,6 @@ else:
 	log = logging.getLogger("nameq")
 	log.addHandler(log_handler)
 
-log.setLevel(logging.DEBUG)
-
 class Node(object):
 
 	def __init__(self, addr, names):
@@ -254,10 +252,13 @@ def main():
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
+	parser.add_argument("--debug",          action="store_true")
 	parser.add_argument("s3bucket",         type=str)
 	parser.add_argument("addr",             type=str)
 	parser.add_argument("names",            type=str, nargs="*")
 	args = parser.parse_args()
+
+	log.setLevel(logging.DEBUG if args.debug else logging.INFO)
 
 	node = Node(args.addr, args.names)
 
