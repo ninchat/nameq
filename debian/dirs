@@ -1,3 +1,4 @@
 etc/dnsmasq.d
 usr/sbin
 var/lib/nameq
+var/run/nameq

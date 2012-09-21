@@ -23,6 +23,7 @@ PORT=
 HOSTS_FILE=
 DNSMASQ_PIDFILE=
 INTERVAL=
+NOTIFY_SOCKET=
 DEBUG=
 S3_PREFIX=
 S3_BUCKET=
@@ -63,6 +64,10 @@ do_start()
 
 	if [ "$INTERVAL" ]
 	then DAEMON_ARGS="$DAEMON_ARGS --interval=$INTERVAL"
+	fi
+
+	if [ "$NOTIFY_SOCKET" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --notifysocket=$NOTIFY_SOCKET"
 	fi
 
 	if [ "$DEBUG" ]

@@ -3,6 +3,7 @@
 from datetime import timedelta, datetime
 import argparse
 import collections
+import json
 import logging
 import os
 import random
@@ -22,6 +23,25 @@ else:
 	log_handler.setFormatter(logging.Formatter("%(name)s: %(levelname)s: %(message)s"))
 	log = logging.getLogger("nameq")
 	log.addHandler(log_handler)
+
+class CloseManager(object):
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, *exc):
+		self.close()
+
+class Context(CloseManager):
+
+	def __init__(self):
+		self._context = zmq.Context()
+
+	def socket(self, *args, **kwargs):
+		return self._context.socket(*args, **kwargs)
+
+	def close(self):
+		self._context.term()
 
 class Node(object):
 
@@ -93,27 +113,21 @@ class S3(object):
 		self.hosts.update()
 		self.peers.publish(addrs)
 
-class Peers(object):
+class Peers(CloseManager):
 
 	name_re = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-.]*[a-zA-Z0-9])?$")
 	addr_re = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
-	def __init__(self, node, port, linger):
+	def __init__(self, context, node, port, linger):
 		self.node    = node
 		self.hosts   = None
 		self.port    = port
 		self.linger  = linger
-		self.context = zmq.Context()
+		self.context = context
 		self.names   = {}
 		self.sub     = self.context.socket(zmq.SUB)
 		self.sub.bind("tcp://*:{}".format(self.port))
 		self.sub.setsockopt(zmq.SUBSCRIBE, "")
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, *exc):
-		self.close()
 
 	def publish(self, addrs):
 		pub = self.context.socket(zmq.PUB)
@@ -176,18 +190,21 @@ class Peers(object):
 		return expedite
 
 	def close(self):
-		self.sub.close()
-		self.context.term()
+		self.sub.close(0)
 
-class Hosts(object):
+class Hosts(CloseManager):
 
-	def __init__(self, node, dns, filename, sources):
+	def __init__(self, context, node, dns, filename, notifysocket, sources):
 		self.node     = node
 		self.dns      = dns
 		self.filename = filename
 		self.tempname = filename + ".tmp"
 		self.sources  = sources
 		self.text     = None
+		self.names    = set()
+		self.notify   = context.socket(zmq.PUB)
+		self.notify.bind("ipc://" + notifysocket)
+		os.chmod(notifysocket, 0666)
 
 	def update(self):
 		combo = collections.defaultdict(list)
@@ -213,7 +230,7 @@ class Hosts(object):
 			names.sort()
 			text += "{}\t{}\n".format(addr, " ".join(names))
 
-		if self.text is None or text != self.text:
+		if text != self.text:
 			log.debug("updating %s", self.filename)
 
 			try:
@@ -225,9 +242,33 @@ class Hosts(object):
 				raise
 			except:
 				log.exception("hosts update error")
-			else:
-				self.text = text
-				self.dns.reload()
+				return
+
+			self.text = text
+
+			if not self.dns.reload():
+				return
+
+			names = set(combo.keys()) | self.node.names
+			if names != self.names:
+				added = names - self.names
+				removed = self.names - names
+				remaining = names - added - removed
+
+				log.debug("notifying: %d added, %d removed, %d remaining",
+				          len(added), len(removed), len(remaining))
+
+				doc = {
+					"added":     sorted(added),
+					"removed":   sorted(removed),
+					"remaining": sorted(remaining),
+				}
+
+				self.notify.send(json.dumps(doc, separators=(",", ":")))
+				self.names = names
+
+	def close(self):
+		self.notify.close(0)
 
 class Dnsmasq(object):
 
@@ -240,10 +281,14 @@ class Dnsmasq(object):
 				pid = int(file.readline().strip())
 
 			os.kill(pid, signal.SIGHUP)
+			return True
+
 		except KeyboardInterrupt:
 			raise
 		except:
 			log.exception("dnsmasq reload error")
+
+		return False
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -252,6 +297,7 @@ def main():
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
+	parser.add_argument("--notifysocket",   type=str, default="/var/run/nameq/nameq.socket")
 	parser.add_argument("--debug",          action="store_true")
 	parser.add_argument("s3bucket",         type=str)
 	parser.add_argument("addr",             type=str)
@@ -262,27 +308,27 @@ def main():
 
 	node = Node(args.addr, args.names)
 
-	with Peers(node, args.port, args.interval / 11.0) as peers:
-		s3    = S3(node, peers, args.s3bucket, args.s3prefix)
-		dns   = Dnsmasq(args.dnsmasqpidfile)
-		hosts = Hosts(node, dns, args.hostsfile, (s3, peers))
+	with Context() as context, Peers(context, node, args.port, args.interval / 11.0) as peers:
+		s3 = S3(node, peers, args.s3bucket, args.s3prefix)
+		dns = Dnsmasq(args.dnsmasqpidfile)
 
-		peers.hosts = hosts
-		s3.hosts    = hosts
+		with Hosts(context, node, dns, args.hostsfile, args.notifysocket, (s3, peers)) as hosts:
+			peers.hosts = hosts
+			s3.hosts = hosts
 
-		interval = args.interval * 0.9 + args.interval * 0.2 * random.random()
-		inited   = False
+			interval = args.interval * 0.9 + args.interval * 0.2 * random.random()
+			inited = False
 
-		while True:
-			try:
-				s3.update()
-				inited = True
-			except KeyboardInterrupt:
-				raise
-			except:
-				log.exception("S3 error")
+			while True:
+				try:
+					s3.update()
+					inited = True
+				except KeyboardInterrupt:
+					raise
+				except:
+					log.exception("S3 error")
 
-			peers.receive(interval if inited else 1)
+				peers.receive(interval if inited else 1)
 
 if __name__ == "__main__":
 	try:

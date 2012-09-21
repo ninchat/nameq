@@ -10,5 +10,5 @@ override_dh_install:
 
 override_dh_fixperms:
 	dh_fixperms
-	chown dnsmasq:root debian/nameq/var/lib/nameq
-	chmod 755 debian/nameq/var/lib/nameq
+	chown dnsmasq:root debian/nameq/var/lib/nameq debian/nameq/var/run/nameq
+	chmod 755 debian/nameq/var/lib/nameq debian/nameq/var/run/nameq

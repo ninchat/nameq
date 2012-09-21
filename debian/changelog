@@ -1,3 +1,9 @@
+nameq (0.2) unstable; urgency=low
+
+  * Notify about added/removed names via local socket.
+
+ -- Timo Savola <timo.savola@somia.fi>  Fri, 21 Sep 2012 10:21:46 +0300
+
 nameq (0.1) unstable; urgency=low
 
   * Second hack.
