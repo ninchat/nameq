@@ -23,6 +23,7 @@ PORT=
 HOSTS_FILE=
 DNSMASQ_PIDFILE=
 INTERVAL=
+DEBUG=
 S3_PREFIX=
 S3_BUCKET=
 LOCAL_ADDR=`ifconfig eth | grep "inet addr:" | sed -r "s/^.*inet addr:([0-9.]+) .*$/\1/"`
@@ -62,6 +63,10 @@ do_start()
 
 	if [ "$INTERVAL" ]
 	then DAEMON_ARGS="$DAEMON_ARGS --interval=$INTERVAL"
+	fi
+
+	if [ "$DEBUG" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --debug"
 	fi
 
 	if [ "$S3_PREFIX" ]
