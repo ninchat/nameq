@@ -21,6 +21,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 
 PORT=
 HOSTS_FILE=
+NAMES_FILE=
 DNSMASQ_PIDFILE=
 INTERVAL=
 NOTIFY_SOCKET=
@@ -56,6 +57,10 @@ do_start()
 
 	if [ "$HOSTS_FILE" ]
 	then DAEMON_ARGS="$DAEMON_ARGS --hostsfile=$HOSTS_FILE"
+	fi
+
+	if [ "$NAMES_FILE" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --namesfile=$NAMES_FILE"
 	fi
 
 	if [ "$DNSMASQ_PIDFILE" ]

@@ -1,3 +1,9 @@
+nameq (0.3) unstable; urgency=low
+
+  * Maintain names file.
+
+ -- Timo Savola <timo.savola@somia.fi>  Fri, 21 Sep 2012 14:38:48 +0300
+
 nameq (0.2) unstable; urgency=low
 
   * Notify about added/removed names via local socket.

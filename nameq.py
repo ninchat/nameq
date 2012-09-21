@@ -24,6 +24,29 @@ else:
 	log = logging.getLogger("nameq")
 	log.addHandler(log_handler)
 
+def ordered(sequence):
+	return sorted(sequence, key=orderingkey)
+
+def orderingkey(string):
+	key = []
+
+	if string:
+		tokens = [string[0]]
+
+		for char in string[1:]:
+			if bool(tokens[-1].isdigit()) == bool(char.isdigit()):
+				tokens[-1] += char
+			else:
+				tokens.append(char)
+
+		for token in tokens:
+			if token.isdigit():
+				key.append(int(token))
+			else:
+				key.append(token)
+
+	return key
+
 class CloseManager(object):
 
 	def __enter__(self):
@@ -48,7 +71,7 @@ class Node(object):
 	def __init__(self, addr, names):
 		self.addr  = addr
 		self.names = set(names)
-		self._str  = " ".join([self.addr] + list(sorted(self.names)))
+		self._str  = " ".join([self.addr] + ordered(self.names))
 
 		if self.names:
 			log.debug("local address %s with name%s %s",
@@ -194,15 +217,15 @@ class Peers(CloseManager):
 
 class Hosts(CloseManager):
 
-	def __init__(self, context, node, dns, filename, notifysocket, sources):
-		self.node     = node
-		self.dns      = dns
-		self.filename = filename
-		self.tempname = filename + ".tmp"
-		self.sources  = sources
-		self.text     = None
-		self.names    = set()
-		self.notify   = context.socket(zmq.PUB)
+	def __init__(self, context, node, dns, hostspath, namespath, notifysocket, sources):
+		self.node      = node
+		self.dns       = dns
+		self.hostspath = hostspath
+		self.namespath = namespath
+		self.sources   = sources
+		self.hosts     = None
+		self.names     = None
+		self.notify    = context.socket(zmq.PUB)
 		self.notify.bind("ipc://" + notifysocket)
 		os.chmod(notifysocket, 0666)
 
@@ -230,45 +253,65 @@ class Hosts(CloseManager):
 			names.sort()
 			text += "{}\t{}\n".format(addr, " ".join(names))
 
-		if text != self.text:
-			log.debug("updating %s", self.filename)
-
-			try:
-				with open(self.tempname, "w") as file:
-					file.write(text)
-
-				os.rename(self.tempname, self.filename)
-			except KeyboardInterrupt:
-				raise
-			except:
-				log.exception("hosts update error")
+		if text != self.hosts:
+			if not self.__update(self.hostspath, text):
 				return
-
-			self.text = text
 
 			if not self.dns.reload():
 				return
 
-			names = set(combo.keys()) | self.node.names
-			if names != self.names:
-				added = names - self.names
-				removed = self.names - names
-				remaining = names - added - removed
+			self.hosts = text
 
-				log.debug("notifying: %d added, %d removed, %d remaining",
-				          len(added), len(removed), len(remaining))
+		newnames = set(combo.keys()) | self.node.names
+		oldnames = self.names
 
-				doc = {
-					"added":     sorted(added),
-					"removed":   sorted(removed),
-					"remaining": sorted(remaining),
-				}
+		if newnames != oldnames:
+			if oldnames is None:
+				oldnames = set()
 
-				self.notify.send(json.dumps(doc, separators=(",", ":")))
-				self.names = names
+			text = "\n".join(ordered(newnames))
+
+			if not self.__update(self.namespath, text):
+				return
+
+			added = newnames - oldnames
+			removed = oldnames - newnames
+			remaining = newnames - added
+
+			log.debug("notifying: %d added, %d removed, %d remaining",
+			          len(added), len(removed), len(remaining))
+
+			doc = {
+				"added":     ordered(added),
+				"removed":   ordered(removed),
+				"remaining": ordered(remaining),
+			}
+
+			self.notify.send(json.dumps(doc, separators=(",", ":")))
+			self.names = newnames
 
 	def close(self):
 		self.notify.close(0)
+
+	@staticmethod
+	def __update(path, text):
+		log.debug("updating %s", path)
+
+		try:
+			temppath = path + ".tmp"
+
+			with open(temppath, "w") as file:
+				file.write(text)
+
+			os.rename(temppath, path)
+			return True
+
+		except KeyboardInterrupt:
+			raise
+		except:
+			log.exception("%s update error", path)
+
+		return False
 
 class Dnsmasq(object):
 
@@ -294,6 +337,7 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--port",           type=int, default=17105)
 	parser.add_argument("--hostsfile",      type=str, default="/var/lib/nameq/hosts")
+	parser.add_argument("--namesfile",      type=str, default="/var/lib/nameq/names")
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
@@ -312,7 +356,8 @@ def main():
 		s3 = S3(node, peers, args.s3bucket, args.s3prefix)
 		dns = Dnsmasq(args.dnsmasqpidfile)
 
-		with Hosts(context, node, dns, args.hostsfile, args.notifysocket, (s3, peers)) as hosts:
+		with Hosts(context, node, dns, args.hostsfile, args.namesfile,
+		           args.notifysocket, (s3, peers)) as hosts:
 			peers.hosts = hosts
 			s3.hosts = hosts
 
