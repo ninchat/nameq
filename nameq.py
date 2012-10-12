@@ -226,8 +226,10 @@ class Hosts(CloseManager):
 		self.hosts     = None
 		self.names     = None
 		self.notify    = context.socket(zmq.PUB)
-		self.notify.bind("ipc://" + notifysocket)
-		os.chmod(notifysocket, 0666)
+		self.notify.bind(notifysocket)
+
+		if notifysocket.startswith("ipc://"):
+			os.chmod(notifysocket[len("ipc://"):], 0666)
 
 	def update(self):
 		combo = collections.defaultdict(list)
@@ -341,7 +343,7 @@ def main():
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
-	parser.add_argument("--notifysocket",   type=str, default="/var/run/nameq/nameq.socket")
+	parser.add_argument("--notifysocket",   type=str, default="ipc:///var/run/nameq/nameq.socket")
 	parser.add_argument("--debug",          action="store_true")
 	parser.add_argument("s3bucket",         type=str)
 	parser.add_argument("addr",             type=str)
