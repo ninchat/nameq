@@ -1,3 +1,11 @@
+nameq (0.4) unstable; urgency=low
+
+  * support any ZeroMQ socket type for notifications
+  * init script fix
+  * post-installation directory ownership adjustment
+
+ -- Timo Savola <timo.savola@somia.fi>  Fri, 12 Oct 2012 03:48:33 +0300
+
 nameq (0.3) unstable; urgency=low
 
   * Maintain names file.
