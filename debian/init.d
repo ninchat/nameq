@@ -9,8 +9,7 @@
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 NAME=nameq
-PYTHON_NAME=python
-PYTHON_PATH=/usr/bin/$PYTHON_NAME
+PYTHON_PATH=/usr/bin/python
 SCRIPT=/usr/sbin/nameq
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
@@ -92,7 +91,6 @@ do_start()
 	export AWS_ACCESS_KEY_ID
 	export AWS_ACCESS_KEY_SECRET
 
-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --test > /dev/null || return 1
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --background --make-pidfile --chuid dnsmasq -- $SCRIPT $DAEMON_ARGS || return 2
 }
 
@@ -106,7 +104,7 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=INT/30/KILL/5 --pidfile $PIDFILE --name $PYTHON_NAME
+	start-stop-daemon --stop --quiet --retry=INT/30/KILL/5 --pidfile $PIDFILE
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	rm -f $PIDFILE
