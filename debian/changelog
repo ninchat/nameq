@@ -1,3 +1,9 @@
+nameq (0.4.1) unstable; urgency=low
+
+  * support IAM roles
+
+ -- Timo Savola <timo.savola@somia.fi>  Tue, 13 Nov 2012 15:29:03 +0200
+
 nameq (0.4) unstable; urgency=low
 
   * support any ZeroMQ socket type for notifications
