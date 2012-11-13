@@ -82,14 +82,11 @@ do_start()
 	then DAEMON_ARGS="$DAEMON_ARGS --s3prefix=$S3_PREFIX"
 	fi
 
-	if [ -z "$S3_BUCKET" ] || [ -z "$LOCAL_ADDR" ] || [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_ACCESS_KEY_SECRET" ]
+	if [ -z "$S3_BUCKET" ] || [ -z "$LOCAL_ADDR" ]
 	then return 2
 	fi
 
 	DAEMON_ARGS="$DAEMON_ARGS $S3_BUCKET $LOCAL_ADDR $LOCAL_NAMES"
-
-	export AWS_ACCESS_KEY_ID
-	export AWS_ACCESS_KEY_SECRET
 
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $PYTHON_PATH --background --make-pidfile --chuid dnsmasq -- $SCRIPT $DAEMON_ARGS || return 2
 }

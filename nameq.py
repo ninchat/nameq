@@ -12,7 +12,7 @@ import rfc822
 import signal
 import time
 
-import boto.s3.connection
+import boto
 import zmq
 
 if os.environ.get("NAMEQ_NOSYSLOG") == "1":
@@ -88,14 +88,10 @@ class S3(object):
 		r".*/([a-zA-Z0-9]([a-zA-Z0-9-.]*[a-zA-Z0-9])?)=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$")
 
 	def __init__(self, node, peers, bucket_name, prefix):
-		conn = boto.s3.connection.S3Connection(
-			os.environ["AWS_ACCESS_KEY_ID"],
-			os.environ["AWS_ACCESS_KEY_SECRET"])
-
 		self.node   = node
 		self.hosts  = None
 		self.peers  = peers
-		self.bucket = conn.get_bucket(bucket_name)
+		self.bucket = boto.connect_s3().get_bucket(bucket_name)
 		self.prefix = prefix
 		self.names  = {}
 
