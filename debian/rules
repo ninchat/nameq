@@ -1,8 +1,4 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ 
-
-override_dh_install:
-	dh_install
-	install -m 755 nameq.py debian/nameq/usr/sbin/nameq
+	dh $@ --with python2

@@ -18,6 +18,7 @@ script
 	LOCAL_ADDR=`ifconfig eth | grep "inet addr:" | sed -r "s/^.*inet addr:([0-9.]+) .*$/\1/"`
 	LOCAL_NAMES=
 
+	DAEMON_COMMAND="python -m nameq"
 	DAEMON_ARGS=
 
 	if [ -r /etc/default/nameq ]
@@ -62,5 +63,5 @@ script
 
 	DAEMON_ARGS="$DAEMON_ARGS $S3_BUCKET $LOCAL_ADDR $LOCAL_NAMES"
 
-	exec /usr/sbin/nameq $DAEMON_ARGS
+	exec $DAEMON_COMMAND $DAEMON_ARGS
 end script
