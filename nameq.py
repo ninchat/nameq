@@ -179,34 +179,58 @@ class Peers(CloseManager):
 				break
 
 	def parse(self, msg):
-		changed  = False
-		expedite = False
-
-		stamp  = datetime.utcnow()
-		tokens = msg.split()
-		if tokens and len(tokens) >= 2:
-			addr = tokens[0]
-			if self.addr_re.match(addr) and all(int(n) < 256 for n in addr.split(".")):
-				for name in tokens[1:]:
-					if self.name_re.match(name):
-						if name not in self.node.names:
-							log.debug("received name %r with address %s", name, addr)
-							self.names[name] = addr, stamp
-							changed = True
-						else:
-							log.warning("local name (%s) in received message", name)
-							expedite = True
-					else:
-						log.error("bad hostname in received message: %r", name)
+		# legacy format
+		if not msg.startswith("{"):
+			tokens = msg.split()
+			if len(tokens) >= 2:
+				self.handle_address({ "address": tokens[0], "names": tokens[1:] })
 			else:
-				log.error("bad IPv4 address in received message: %r", addr)
+				log.error("bad message: %r", msg)
+			return
+
+		try:
+			doc = json.loads(msg)
+		except ValueError:
+			log.exception("bad message")
 		else:
-			log.error("bad message received: %r", msg)
+			if not isinstance(doc, dict):
+				log.exception("bad message")
+				return
+
+			for key, params in doc.iteritems():
+				try:
+					handler = getattr(self, "handle_" + key)
+				except AttributeError:
+					log.warning("no handler for message type: %r", key)
+				else:
+					try:
+						handler(params)
+					except:
+						log.exception("%s message handling failed", key)
+
+	def handle_address(self, params):
+		addr = params["address"]
+		names = params["names"]
+		changed = False
+
+		if self.addr_re.match(addr) and all(int(n) < 256 for n in addr.split(".")):
+			stamp = datetime.utcnow()
+
+			for name in names:
+				if self.name_re.match(name):
+					if name not in self.node.names:
+						log.debug("received name %r with address %s", name, addr)
+						self.names[name] = addr, stamp
+						changed = True
+					else:
+						log.warning("local name (%s) in received message", name)
+				else:
+					log.error("bad hostname in received message: %r", name)
+		else:
+			log.error("bad IPv4 address in received message: %r", addr)
 
 		if changed:
 			self.hosts.update()
-
-		return expedite
 
 	def close(self):
 		self.sub.close(0)
@@ -331,7 +355,7 @@ class Dnsmasq(object):
 
 		return False
 
-def main():
+def main(peers_cls=Peers):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--port",           type=int, default=17105)
 	parser.add_argument("--hostsfile",      type=str, default="/var/lib/nameq/hosts")
@@ -350,7 +374,7 @@ def main():
 
 	node = Node(args.addr, args.names)
 
-	with Context() as context, Peers(context, node, args.port, args.interval / 11.0) as peers:
+	with Context() as context, peers_cls(context, node, args.port, args.interval / 11.0) as peers:
 		s3 = S3(node, peers, args.s3bucket, args.s3prefix)
 		dns = Dnsmasq(args.dnsmasqpidfile)
 
