@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
 	name             = "nameq",
-	version          = "0.4.1",
+	version          = "0.5",
 	maintainer       = "Timo Savola",
 	maintainer_email = "timo.savola@somia.fi",
 	url              = "https://github.com/somia/nameq",

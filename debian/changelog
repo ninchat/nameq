@@ -1,3 +1,11 @@
+nameq (0.5) unstable; urgency=low
+
+  * use Upstart
+  * install as Python module
+  * support additional message types
+
+ -- Timo Savola <timo.savola@somia.fi>  Tue, 29 Jan 2013 11:05:45 +0200
+
 nameq (0.4.1) unstable; urgency=low
 
   * support IAM roles
