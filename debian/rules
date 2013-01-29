@@ -6,4 +6,3 @@
 override_dh_install:
 	dh_install
 	install -m 755 nameq.py debian/nameq/usr/sbin/nameq
-	install -m 644 debian/dnsmasq.d debian/nameq/etc/dnsmasq.d/nameq
