@@ -1,0 +1,66 @@
+description "nameq"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+
+script
+	PORT=
+	HOSTS_FILE=
+	NAMES_FILE=
+	DNSMASQ_PIDFILE=
+	INTERVAL=
+	NOTIFY_SOCKET=
+	DEBUG=
+	S3_PREFIX=
+	S3_BUCKET=
+	LOCAL_ADDR=`ifconfig eth | grep "inet addr:" | sed -r "s/^.*inet addr:([0-9.]+) .*$/\1/"`
+	LOCAL_NAMES=
+
+	DAEMON_ARGS=
+
+	if [ -r /etc/default/nameq ]
+	then . /etc/default/nameq
+	fi
+
+	if [ "$PORT" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --port=$PORT"
+	fi
+
+	if [ "$HOSTS_FILE" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --hostsfile=$HOSTS_FILE"
+	fi
+
+	if [ "$NAMES_FILE" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --namesfile=$NAMES_FILE"
+	fi
+
+	if [ "$DNSMASQ_PIDFILE" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --dnsmasqpidfile=$DNSMASQ_PIDFILE"
+	fi
+
+	if [ "$INTERVAL" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --interval=$INTERVAL"
+	fi
+
+	if [ "$NOTIFY_SOCKET" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --notifysocket=$NOTIFY_SOCKET"
+	fi
+
+	if [ "$DEBUG" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --debug"
+	fi
+
+	if [ "$S3_PREFIX" ]
+	then DAEMON_ARGS="$DAEMON_ARGS --s3prefix=$S3_PREFIX"
+	fi
+
+	if [ -z "$S3_BUCKET" ] || [ -z "$LOCAL_ADDR" ]
+	then exit 1
+	fi
+
+	DAEMON_ARGS="$DAEMON_ARGS $S3_BUCKET $LOCAL_ADDR $LOCAL_NAMES"
+
+	exec /usr/sbin/nameq $DAEMON_ARGS
+end script
