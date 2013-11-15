@@ -233,10 +233,10 @@ class Peers(CloseManager):
 
 class Hosts(object):
 
-	def __init__(self, context, node, dns, hostspath, sources):
+	def __init__(self, context, node, dns, hostspaths, sources):
 		self.node = node
 		self.dns = dns
-		self.hostspath = hostspath
+		self.hostspaths = hostspaths
 		self.sources = sources
 		self.hosts = None
 
@@ -265,13 +265,17 @@ class Hosts(object):
 			text += "{}\t{}\n".format(addr, " ".join(names))
 
 		if text != self.hosts:
-			if not self.__update(self.hostspath, text):
-				return
+			ok = True
+
+			for path in self.hostspaths:
+				if not self.__update(path, text):
+					ok = False
 
 			if not self.dns.reload():
-				return
+				ok = False
 
-			self.hosts = text
+			if ok:
+				self.hosts = text
 
 	@staticmethod
 	def __update(path, text):
@@ -316,7 +320,7 @@ class Dnsmasq(object):
 def main(peers_cls=Peers):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--port", type=int, default=17105)
-	parser.add_argument("--hostsfile", default="/var/lib/nameq/hosts")
+	parser.add_argument("--hostsfile", nargs="*")
 	parser.add_argument("--dnsmasqpidfile", default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval", type=int, default=60)
 	parser.add_argument("--s3prefix", default="")
@@ -325,6 +329,9 @@ def main(peers_cls=Peers):
 	parser.add_argument("addr")
 	parser.add_argument("names", nargs="+")
 	args = parser.parse_args()
+
+	if not args.hostsfile:
+		args.hostsfile.append("/var/lib/nameq/hosts")
 
 	log.setLevel(logging.DEBUG if args.debug else logging.INFO)
 

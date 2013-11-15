@@ -22,7 +22,7 @@ end script
 
 script
 	PORT=
-	HOSTS_FILE=
+	HOSTS_FILES=/var/lib/nameq/hosts
 	DNSMASQ_PIDFILE=
 	INTERVAL=
 	DEBUG=
@@ -42,9 +42,9 @@ script
 	then DAEMON_ARGS="$DAEMON_ARGS --port=$PORT"
 	fi
 
-	if [ "$HOSTS_FILE" ]
-	then DAEMON_ARGS="$DAEMON_ARGS --hostsfile=$HOSTS_FILE"
-	fi
+	for HOSTS_FILE in $HOSTS_FILES
+	do DAEMON_ARGS="$DAEMON_ARGS --hostsfile=$HOSTS_FILE"
+	done
 
 	if [ "$DNSMASQ_PIDFILE" ]
 	then DAEMON_ARGS="$DAEMON_ARGS --dnsmasqpidfile=$DNSMASQ_PIDFILE"
