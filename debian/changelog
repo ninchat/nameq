@@ -1,3 +1,12 @@
+nameq (0.6) unstable; urgency=low
+
+  * Support multiple hosts files (for chroots).
+  * Remove expired names from hosts.
+  * Don't maintain a names file.
+  * Don't publish peers' name changes via local ZeroMQ socket.
+
+ -- Timo Savola <timo@ninchat.com>  Fri, 15 Nov 2013 13:36:35 +0200
+
 nameq (0.5) unstable; urgency=low
 
   * use Upstart
