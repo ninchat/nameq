@@ -69,9 +69,9 @@ class Context(CloseManager):
 class Node(object):
 
 	def __init__(self, addr, names):
-		self.addr  = addr
+		self.addr = addr
 		self.names = set(names)
-		self._str  = " ".join([self.addr] + ordered(self.names))
+		self._str = " ".join([self.addr] + ordered(self.names))
 
 		log.debug("local address %s with names: %s", addr, " ".join(repr(n) for n in self.names))
 
@@ -84,12 +84,12 @@ class S3(object):
 		r".*/([a-zA-Z0-9]([a-zA-Z0-9-.]*[a-zA-Z0-9])?)=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$")
 
 	def __init__(self, node, peers, bucket_name, prefix):
-		self.node   = node
-		self.hosts  = None
-		self.peers  = peers
+		self.node = node
+		self.hosts = None
+		self.peers = peers
 		self.bucket = boto.connect_s3().get_bucket(bucket_name)
 		self.prefix = prefix
-		self.names  = {}
+		self.names = {}
 
 	def update(self):
 		for name in self.node.names:
@@ -97,8 +97,8 @@ class S3(object):
 			log.debug("storing S3 key %r", keyname)
 			self.bucket.new_key(keyname).set_contents_from_string("")
 
-		addrs  = set()
-		names  = {}
+		addrs = set()
+		names = {}
 		expiry = datetime.utcnow() - timedelta(hours=1)
 
 		for key in self.bucket.list(self.prefix):
@@ -134,13 +134,13 @@ class Peers(CloseManager):
 	addr_re = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
 	def __init__(self, context, node, port, linger):
-		self.node    = node
-		self.hosts   = None
-		self.port    = port
-		self.linger  = linger
+		self.node = node
+		self.hosts = None
+		self.port = port
+		self.linger = linger
 		self.context = context
-		self.names   = {}
-		self.sub     = self.context.socket(zmq.SUB)
+		self.names = {}
+		self.sub = self.context.socket(zmq.SUB)
 		self.sub.bind("tcp://*:{}".format(self.port))
 		self.sub.setsockopt(zmq.SUBSCRIBE, "")
 
@@ -159,7 +159,7 @@ class Peers(CloseManager):
 
 	def receive(self, timeout):
 		remain = int(timeout * 1000)
-		start  = time.time()
+		start = time.time()
 
 		while True:
 			if not self.sub.poll(remain):
@@ -234,11 +234,11 @@ class Peers(CloseManager):
 class Hosts(object):
 
 	def __init__(self, context, node, dns, hostspath, sources):
-		self.node      = node
-		self.dns       = dns
+		self.node = node
+		self.dns = dns
 		self.hostspath = hostspath
-		self.sources   = sources
-		self.hosts     = None
+		self.sources = sources
+		self.hosts = None
 
 	def update(self):
 		combo = collections.defaultdict(list)
@@ -315,15 +315,15 @@ class Dnsmasq(object):
 
 def main(peers_cls=Peers):
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--port",           type=int, default=17105)
-	parser.add_argument("--hostsfile",      type=str, default="/var/lib/nameq/hosts")
-	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
-	parser.add_argument("--interval",       type=int, default=60)
-	parser.add_argument("--s3prefix",       type=str, default="")
-	parser.add_argument("--debug",          action="store_true")
-	parser.add_argument("s3bucket",         type=str)
-	parser.add_argument("addr",             type=str)
-	parser.add_argument("names",            type=str, nargs="+")
+	parser.add_argument("--port", type=int, default=17105)
+	parser.add_argument("--hostsfile", default="/var/lib/nameq/hosts")
+	parser.add_argument("--dnsmasqpidfile", default="/var/run/dnsmasq/dnsmasq.pid")
+	parser.add_argument("--interval", type=int, default=60)
+	parser.add_argument("--s3prefix", default="")
+	parser.add_argument("--debug", action="store_true")
+	parser.add_argument("s3bucket")
+	parser.add_argument("addr")
+	parser.add_argument("names", nargs="+")
 	args = parser.parse_args()
 
 	log.setLevel(logging.DEBUG if args.debug else logging.INFO)
