@@ -47,6 +47,9 @@ def orderingkey(string):
 
 	return key
 
+def expiration_time():
+	return datetime.utcnow() - timedelta(hours=1)
+
 class CloseManager(object):
 
 	def __enter__(self):
@@ -99,7 +102,7 @@ class S3(object):
 
 		addrs = set()
 		names = {}
-		expiry = datetime.utcnow() - timedelta(hours=1)
+		expiry = expiration_time()
 
 		for key in self.bucket.list(self.prefix):
 			match = self.key_re.match(key.name)
@@ -241,11 +244,13 @@ class Hosts(object):
 		self.hosts = None
 
 	def update(self):
+		expiry = expiration_time()
 		combo = collections.defaultdict(list)
 
 		for source in self.sources:
 			for name, (addr, stamp) in source.names.iteritems():
-				combo[name].append((stamp, addr))
+				if stamp > expiry:
+					combo[name].append((stamp, addr))
 
 		hosts = collections.defaultdict(list)
 		hosts["127.0.0.1"].extend(self.node.names)
