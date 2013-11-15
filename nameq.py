@@ -235,20 +235,14 @@ class Peers(CloseManager):
 	def close(self):
 		self.sub.close(0)
 
-class Hosts(CloseManager):
+class Hosts(object):
 
-	def __init__(self, context, node, dns, hostspath, notifysocket, sources):
+	def __init__(self, context, node, dns, hostspath, sources):
 		self.node      = node
 		self.dns       = dns
 		self.hostspath = hostspath
 		self.sources   = sources
 		self.hosts     = None
-		self.names     = None
-		self.notify    = context.socket(zmq.PUB)
-		self.notify.bind(notifysocket)
-
-		if notifysocket.startswith("ipc://"):
-			os.chmod(notifysocket[len("ipc://"):], 0666)
 
 	def update(self):
 		combo = collections.defaultdict(list)
@@ -282,32 +276,6 @@ class Hosts(CloseManager):
 				return
 
 			self.hosts = text
-
-		newnames = set(combo.keys()) | self.node.names
-		oldnames = self.names
-
-		if newnames != oldnames:
-			if oldnames is None:
-				oldnames = set()
-
-			added = newnames - oldnames
-			removed = oldnames - newnames
-			remaining = newnames - added
-
-			log.debug("notifying: %d added, %d removed, %d remaining",
-			          len(added), len(removed), len(remaining))
-
-			doc = {
-				"added":     ordered(added),
-				"removed":   ordered(removed),
-				"remaining": ordered(remaining),
-			}
-
-			self.notify.send(json.dumps(doc, separators=(",", ":")))
-			self.names = newnames
-
-	def close(self):
-		self.notify.close(0)
 
 	@staticmethod
 	def __update(path, text):
@@ -356,7 +324,6 @@ def main(peers_cls=Peers):
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
-	parser.add_argument("--notifysocket",   type=str, default="ipc:///var/run/nameq/nameq.socket")
 	parser.add_argument("--debug",          action="store_true")
 	parser.add_argument("s3bucket",         type=str)
 	parser.add_argument("addr",             type=str)
@@ -367,12 +334,12 @@ def main(peers_cls=Peers):
 
 	node = Node(args.addr, args.names)
 
-	with Context() as context, peers_cls(context, node, args.port, args.interval / 11.0) as peers:
-		s3 = S3(node, peers, args.s3bucket, args.s3prefix)
-		dns = Dnsmasq(args.dnsmasqpidfile)
+	with Context() as context:
+		with peers_cls(context, node, args.port, args.interval / 11.0) as peers:
+			s3 = S3(node, peers, args.s3bucket, args.s3prefix)
+			dns = Dnsmasq(args.dnsmasqpidfile)
+			hosts = Hosts(context, node, dns, args.hostsfile, (s3, peers))
 
-		with Hosts(context, node, dns, args.hostsfile,
-		           args.notifysocket, (s3, peers)) as hosts:
 			peers.hosts = hosts
 			s3.hosts = hosts
 
