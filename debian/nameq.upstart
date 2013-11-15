@@ -5,6 +5,21 @@ stop on runlevel [!2345]
 
 respawn
 
+pre-start script
+	LOCAL_NAMES=
+	S3_BUCKET=
+
+	if [ -r /etc/default/nameq ]
+	then . /etc/default/nameq
+	fi
+
+	if [ -z "${LOCAL_NAMES}" ] || [ -z "$S3_BUCKET" ]
+	then
+		stop
+		exit 0
+	fi
+end script
+
 script
 	PORT=
 	HOSTS_FILE=

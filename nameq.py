@@ -73,11 +73,7 @@ class Node(object):
 		self.names = set(names)
 		self._str  = " ".join([self.addr] + ordered(self.names))
 
-		if self.names:
-			log.debug("local address %s with name%s %s",
-			          addr, "s" if len(self.names) > 1 else "", ", ".join([repr(n) for n in self.names]))
-		else:
-			log.debug("local address %s without names", addr)
+		log.debug("local address %s with names: %s", addr, " ".join(repr(n) for n in self.names))
 
 	def __str__(self):
 		return self._str
@@ -327,7 +323,7 @@ def main(peers_cls=Peers):
 	parser.add_argument("--debug",          action="store_true")
 	parser.add_argument("s3bucket",         type=str)
 	parser.add_argument("addr",             type=str)
-	parser.add_argument("names",            type=str, nargs="*")
+	parser.add_argument("names",            type=str, nargs="+")
 	args = parser.parse_args()
 
 	log.setLevel(logging.DEBUG if args.debug else logging.INFO)
