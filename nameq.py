@@ -237,11 +237,10 @@ class Peers(CloseManager):
 
 class Hosts(CloseManager):
 
-	def __init__(self, context, node, dns, hostspath, namespath, notifysocket, sources):
+	def __init__(self, context, node, dns, hostspath, notifysocket, sources):
 		self.node      = node
 		self.dns       = dns
 		self.hostspath = hostspath
-		self.namespath = namespath
 		self.sources   = sources
 		self.hosts     = None
 		self.names     = None
@@ -290,11 +289,6 @@ class Hosts(CloseManager):
 		if newnames != oldnames:
 			if oldnames is None:
 				oldnames = set()
-
-			text = "\n".join(ordered(newnames))
-
-			if not self.__update(self.namespath, text):
-				return
 
 			added = newnames - oldnames
 			removed = oldnames - newnames
@@ -359,7 +353,6 @@ def main(peers_cls=Peers):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--port",           type=int, default=17105)
 	parser.add_argument("--hostsfile",      type=str, default="/var/lib/nameq/hosts")
-	parser.add_argument("--namesfile",      type=str, default="/var/lib/nameq/names")
 	parser.add_argument("--dnsmasqpidfile", type=str, default="/var/run/dnsmasq/dnsmasq.pid")
 	parser.add_argument("--interval",       type=int, default=60)
 	parser.add_argument("--s3prefix",       type=str, default="")
@@ -378,7 +371,7 @@ def main(peers_cls=Peers):
 		s3 = S3(node, peers, args.s3bucket, args.s3prefix)
 		dns = Dnsmasq(args.dnsmasqpidfile)
 
-		with Hosts(context, node, dns, args.hostsfile, args.namesfile,
+		with Hosts(context, node, dns, args.hostsfile,
 		           args.notifysocket, (s3, peers)) as hosts:
 			peers.hosts = hosts
 			s3.hosts = hosts
