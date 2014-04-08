@@ -78,25 +78,16 @@ class Node(object):
 	def __str__(self):
 		return self._str
 
-class S3(object):
+class S3Loader(object):
 
 	key_re = re.compile(
 		r".*/([a-zA-Z0-9]([a-zA-Z0-9-.]*[a-zA-Z0-9])?)=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$")
 
-	def __init__(self, node, peers, bucket_name, prefix):
-		self.node = node
-		self.hosts = None
-		self.peers = peers
+	def __init__(self, bucket_name, prefix):
 		self.bucket = boto.connect_s3().get_bucket(bucket_name)
 		self.prefix = prefix
-		self.names = {}
 
-	def update(self):
-		for name in self.node.names:
-			keyname = "{}nameq/{}={}".format(self.prefix, name, self.node.addr)
-			log.debug("storing S3 key %r", keyname)
-			self.bucket.new_key(keyname).set_contents_from_string("")
-
+	def load(self, excluded_names=()):
 		addrs = set()
 		names = {}
 		expiry = expiration_time()
@@ -107,7 +98,7 @@ class S3(object):
 				name, _, addr = match.groups()
 				if all(int(n) < 256 for n in addr.split(".")):
 					addrs.add(addr)
-					if name not in self.node.names:
+					if name not in excluded_names:
 						stamp = datetime.strptime(key.last_modified, "%Y-%m-%dT%H:%M:%S.000Z")
 						if stamp > expiry:
 							names[name] = addr, stamp
@@ -124,7 +115,26 @@ class S3(object):
 			elif not key.name.endswith("/"):
 				log.error("bad S3 key: %r", key.name)
 
-		self.names = names
+		return names, addrs
+
+class S3(S3Loader):
+
+	def __init__(self, node, peers, bucket_name, prefix):
+		super(S3, self).__init__(bucket_name, prefix)
+
+		self.node = node
+		self.hosts = None
+		self.peers = peers
+		self.names = {}
+
+	def update(self):
+		for name in self.node.names:
+			keyname = "{}nameq/{}={}".format(self.prefix, name, self.node.addr)
+			log.debug("storing S3 key %r", keyname)
+			self.bucket.new_key(keyname).set_contents_from_string("")
+
+		self.names, addrs = self.load(self.node.names)
+
 		self.hosts.update()
 		self.peers.publish(addrs)
 
