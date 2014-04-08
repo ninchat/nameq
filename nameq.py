@@ -15,14 +15,11 @@ import time
 import boto
 import zmq
 
-if os.environ.get("NAMEQ_NOSYSLOG") == "1":
-	logging.basicConfig()
-	log = logging.getLogger("nameq")
-else:
-	log_handler = logging.handlers.SysLogHandler(address="/dev/log")
-	log_handler.setFormatter(logging.Formatter("%(name)s: %(levelname)s: %(message)s"))
-	log = logging.getLogger("nameq")
-	log.addHandler(log_handler)
+log_handler = logging.handlers.SysLogHandler(address="/dev/log")
+log_handler.setFormatter(logging.Formatter("%(name)s: %(levelname)s: %(message)s"))
+
+log = logging.getLogger("nameq")
+log.addHandler(log_handler)
 
 def ordered(sequence):
 	return sorted(sequence, key=orderingkey)
