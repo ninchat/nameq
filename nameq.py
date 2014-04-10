@@ -101,7 +101,14 @@ class S3Loader(object):
 					if name not in excluded_names:
 						stamp = datetime.strptime(key.last_modified, "%Y-%m-%dT%H:%M:%S.000Z")
 						if stamp > expiry:
-							names[name] = addr, stamp
+							try:
+								_, prev_stamp = names[name]
+								ok = stamp > prev_stamp
+							except KeyError:
+								ok = True
+
+							if ok:
+								names[name] = addr, stamp
 						else:
 							log.warning("deleting old S3 key: %r (last modified at %s)", str(key.name), stamp)
 							try:
