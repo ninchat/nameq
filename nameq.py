@@ -109,7 +109,7 @@ class S3Loader(object):
 
 							if ok:
 								names[name] = addr, stamp
-						else:
+						elif key.name.startswith(self.prefix + "nameq/"):
 							log.warning("deleting old S3 key: %r (last modified at %s)", str(key.name), stamp)
 							try:
 								key.delete()
