@@ -349,8 +349,10 @@ def main(peers_cls=Peers):
 	parser.add_argument("names", nargs="+")
 	args = parser.parse_args()
 
-	if not args.hostsfile:
-		args.hostsfile.append("/var/lib/nameq/hosts")
+	if args.hostsfile:
+		hostspaths = args.hostsfile
+	else:
+		hostspaths = ["/var/lib/nameq/hosts"]
 
 	log.setLevel(logging.DEBUG if args.debug else logging.INFO)
 
@@ -360,7 +362,7 @@ def main(peers_cls=Peers):
 		with peers_cls(context, node, args.port, args.interval / 11.0) as peers:
 			s3 = S3(node, peers, args.s3bucket, args.s3prefix)
 			dns = Dnsmasq(args.dnsmasqpidfile)
-			hosts = Hosts(context, node, dns, args.hostsfile, (s3, peers))
+			hosts = Hosts(context, node, dns, hostspaths, (s3, peers))
 
 			peers.hosts = hosts
 			s3.hosts = hosts
