@@ -2,10 +2,10 @@ from distutils.core import setup
 
 setup(
 	name             = "nameq",
-	version          = "0.5",
+	version          = "1.0",
 	maintainer       = "Timo Savola",
-	maintainer_email = "timo.savola@somia.fi",
-	url              = "https://github.com/somia/nameq",
-        license          = "MIT",
+	maintainer_email = "timo@ninchat.com",
+	url              = "https://github.com/ninchat/nameq",
+	license          = "MIT",
 	py_modules       = ["nameq"],
 )
