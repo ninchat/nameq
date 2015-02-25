@@ -24,7 +24,7 @@ the same hostname, the latest file wins.
 
 ### Online
 
-Nodes broadcast their configuration to each other via UDP (port 15106 by
+Nodes broadcast their configuration to each other via UDP (port 17106 by
 default).  If multiple hosts claim the same hostname, the latest packet wins.
 
 S3 is checked once in a while for nodes which may have been missed (e.g. due to
