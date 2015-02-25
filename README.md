@@ -50,8 +50,8 @@ and underscores ("_"); other files are skipped.
 
 ## Feature tree
 
-Network-wide feature configuration is written to a directory tree which looks
-something like this:
+Network-wide feature configuration is written to a directory tree (rooted at
+/run/nameq by default) which looks something like this:
 
 	STATEDIR/features/FEATURE-A/10.0.0.1
 	STATEDIR/features/FEATURE-A/10.0.0.2
