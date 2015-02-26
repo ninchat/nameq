@@ -18,10 +18,10 @@ func resolveAddr(ipAddr string, port int) (addr *net.UDPAddr, err error) {
 }
 
 type Node struct {
-	IPAddr   string                     `json:"ip_addr,omitempty"`
-	TimeNs   int64                      `json:"time_ns,omitempty"`
-	Names    []string                   `json:"names,omitempty"`
-	Features map[string]json.RawMessage `json:"features,omitempty"`
+	IPAddr   string                      `json:"ip_addr,omitempty"`
+	TimeNs   int64                       `json:"time_ns,omitempty"`
+	Names    []string                    `json:"names,omitempty"`
+	Features map[string]*json.RawMessage `json:"features,omitempty"`
 }
 
 type LocalNode struct {
@@ -128,12 +128,12 @@ func (local *LocalNode) updateNames(newNames []string) (update bool) {
 	return
 }
 
-func (local *LocalNode) updateFeatures(newFeatures map[string]json.RawMessage) (update bool) {
+func (local *LocalNode) updateFeatures(newFeatures map[string]*json.RawMessage) (update bool) {
 	oldNode := local.getNode()
 
 	for name, newValue := range newFeatures {
 		oldValue, found := oldNode.Features[name]
-		if !found || bytes.Compare(newValue, oldValue) != 0 {
+		if !found || bytes.Compare(*newValue, *oldValue) != 0 {
 			update = true
 			break
 		}

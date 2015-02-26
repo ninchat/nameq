@@ -108,18 +108,18 @@ func initNameConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, l
 }
 
 func initFeatureConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, log *Log) (err error) {
-	var argFeatures map[string]json.RawMessage
+	var argFeatures map[string]*json.RawMessage
 
 	if arg != "" {
 		if err = json.Unmarshal([]byte(arg), &argFeatures); err != nil {
 			return
 		}
 	} else {
-		argFeatures = make(map[string]json.RawMessage)
+		argFeatures = make(map[string]*json.RawMessage)
 	}
 
 	return watchConfig(dir, featureRE, log, func(filenames []string) {
-		features := make(map[string]json.RawMessage)
+		features := make(map[string]*json.RawMessage)
 
 		for name, value := range argFeatures {
 			features[name] = value
@@ -139,7 +139,7 @@ func initFeatureConfig(local *LocalNode, arg, dir string, notify chan<- struct{}
 				continue
 			}
 
-			var value json.RawMessage
+			var value *json.RawMessage
 
 			if err = json.Unmarshal(data, &value); err != nil {
 				log.Errorf("%s: %s", path, err)
