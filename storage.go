@@ -98,7 +98,7 @@ func updateStorage(local *LocalNode, client *s3.S3, bucket, key string, log *Log
 		panic(err)
 	}
 
-	err = putObject(client, bucket, key, data)
+	err = putObject(client, bucket, key, data, "application/json")
 	return
 }
 
@@ -203,13 +203,14 @@ func parseCredentials(data []byte) (creds aws.CredentialsProvider, err error) {
 	return
 }
 
-func putObject(client *s3.S3, bucket string, key string, body []byte) (err error) {
+func putObject(client *s3.S3, bucket string, key string, body []byte, contentType string) (err error) {
 	contentLength := int64(len(body))
 
 	request := &s3.PutObjectRequest{
 		Body:          BytesReadCloser{bytes.NewReader(body)},
 		Bucket:        &bucket,
 		ContentLength: &contentLength,
+		ContentType:   &contentType,
 		Key:           &key,
 	}
 
