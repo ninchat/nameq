@@ -120,7 +120,7 @@ func main() {
 
 	flag.Parse()
 
-	if ipAddr == "" || ((secretFile == "") == (secretFd < 0)) || (s3credFile == "" && s3credFd < 0) || s3region == "" || s3bucket == "" {
+	if ipAddr == "" || ((secretFile == "") == (secretFd < 0)) || (s3credFile != "" && s3credFd >= 0) || s3region == "" || s3bucket == "" {
 		flag.Usage()
 		os.Exit(2)
 	}
