@@ -117,7 +117,7 @@ func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDP
 
 	for object := range objects {
 		ipAddr := (*object.Key)[len(prefix):]
-		if ipAddr == local.ipAddr {
+		if ipAddr == "" || ipAddr == local.ipAddr {
 			continue
 		}
 
