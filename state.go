@@ -89,6 +89,12 @@ func writeFeatureState(ipAddr string, node *Node, featureDir, tmpDir string, fil
 			continue
 		}
 
+		if err := file.Chmod(0444); err != nil {
+			os.Remove(file.Name())
+			log.Error(err)
+			continue
+		}
+
 		if err := file.Close(); err != nil {
 			os.Remove(file.Name())
 			log.Error(err)
