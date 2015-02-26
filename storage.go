@@ -116,12 +116,12 @@ func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDP
 	expireThreshold := time.Now().Add(-expireTimeout)
 
 	for object := range objects {
-		ipaddr := (*object.Key)[len(prefix):]
-		if ipaddr == local.ipAddr {
+		ipAddr := (*object.Key)[len(prefix):]
+		if ipAddr == local.ipAddr {
 			continue
 		}
 
-		if ip := net.ParseIP(ipaddr); ip == nil {
+		if ip := net.ParseIP(ipAddr); ip == nil {
 			log.Errorf("bad S3 key: %s", *object.Key)
 			continue
 		} else if !ip.IsGlobalUnicast() {
@@ -130,7 +130,7 @@ func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDP
 		}
 
 		if object.LastModified.After(expireThreshold) {
-			if remotes.updatable(ipaddr, object.LastModified) {
+			if remotes.updatable(ipAddr, object.LastModified) {
 				loadKeys = append(loadKeys, object.Key)
 			}
 		} else {
@@ -139,9 +139,9 @@ func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDP
 	}
 
 	for _, key := range deleteKeys {
-		ipaddr := (*key)[len(prefix):]
+		ipAddr := (*key)[len(prefix):]
 
-		log.Infof("deleting %s from S3", ipaddr)
+		log.Infof("deleting %s from S3", ipAddr)
 
 		if err := deleteObject(client, bucket, key); err != nil {
 			log.Errorf("S3 DeleteObject: %s", err)
@@ -151,20 +151,20 @@ func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDP
 	var newAddrs []*net.UDPAddr
 
 	for _, key := range loadKeys {
-		ipaddr := (*key)[len(prefix):]
+		ipAddr := (*key)[len(prefix):]
 
-		log.Debugf("loading %s from S3", ipaddr)
+		log.Debugf("loading %s from S3", ipAddr)
 
 		if output, err := getObject(client, bucket, key); err == nil {
 			node := new(Node)
 			err := json.NewDecoder(output.Body).Decode(node)
 			output.Body.Close()
 			if err != nil {
-				log.Errorf("S3: %s: %s", ipaddr, err)
+				log.Errorf("S3: %s: %s", ipAddr, err)
 				continue
 			}
 
-			node.IPAddr = ipaddr
+			node.IPAddr = ipAddr
 			node.TimeNs = output.LastModified.UnixNano()
 
 			if newAddr := remotes.update(node, local, log); newAddr != nil {
