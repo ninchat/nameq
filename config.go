@@ -77,7 +77,7 @@ func initNameConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, l
 	argNames := strings.Fields(arg)
 
 	return watchConfig(dir, nameRE, log, func(filenames []string) {
-		var names []string
+		names := make([]string, len(argNames))
 		copy(names, argNames)
 
 		for _, filename := range filenames {
