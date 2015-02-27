@@ -10,14 +10,17 @@ nameq: $(wildcard *.go service/*.go)
 	$(GO) get golang.org/x/net/html
 
 	$(GO) fmt *.go
-	$(GO) fmt ./service
-	$(GO) fmt ./go
+	$(GO) fmt service/*.go
+	$(GO) fmt go/*.go
 
 	$(GO) vet *.go
-	$(GO) vet ./service
-	$(GO) vet ./go
+	$(GO) vet service/*.go
+	$(GO) vet go/*.go
 
 	$(GO) build -o $@
+
+check::
+	$(GO) test -v ./go
 
 clean:
 	rm -f nameq

@@ -107,11 +107,13 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, featureDir string) {
 	for {
 		input := m.watcher.Event
 		output := c
+		var outstanding *Feature
 
-		if len(m.queued) == 0 {
-			output = nil
-		} else {
+		if len(m.queued) > 0 {
+			outstanding = m.queued[0]
 			input = nil
+		} else {
+			output = nil
 		}
 
 		select {
@@ -139,7 +141,7 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, featureDir string) {
 		case err := <-m.watcher.Error:
 			m.log(err)
 
-		case output <- m.queued[0]:
+		case output <- outstanding:
 			m.queued = m.queued[1:]
 
 		case <-m.closed:
@@ -171,8 +173,8 @@ func (m *FeatureMonitor) removeFeature(dir string) {
 	}
 }
 
-func (m *FeatureMonitor) addHost(name string, path string) {
-	host := m.parseHost(name, path)
+func (m *FeatureMonitor) addHost(hostname, path string) {
+	host := m.parseHost(hostname, path)
 	if host == nil {
 		return
 	}
@@ -194,14 +196,14 @@ func (m *FeatureMonitor) addHost(name string, path string) {
 	}
 
 	m.queued = append(m.queued, &Feature{
-		Name: name,
+		Name: filepath.Base(filepath.Dir(path)),
 		Host: host,
 		Data: data,
 	})
 }
 
-func (m *FeatureMonitor) removeHost(name string, path string) {
-	host := m.parseHost(name, path)
+func (m *FeatureMonitor) removeHost(hostname, path string) {
+	host := m.parseHost(hostname, path)
 	if host == nil {
 		return
 	}
@@ -213,7 +215,7 @@ func (m *FeatureMonitor) removeHost(name string, path string) {
 	}
 
 	m.queued = append(m.queued, &Feature{
-		Name: name,
+		Name: filepath.Base(filepath.Dir(path)),
 		Host: host,
 	})
 }
