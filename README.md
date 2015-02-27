@@ -67,10 +67,9 @@ monitor changes in real time.
 
 ## Source repository contents
 
-- The top-level and [`service`](service) directories contain Go sources for the
+- The top-level and [service](service) directories contain Go sources for the
   nameq program.
-
-- The [`go`](go) directory contains a Go package for use by application code.
+- The [go](go) directory contains a Go package for use by application code.
 
 
 ## Dependencies
