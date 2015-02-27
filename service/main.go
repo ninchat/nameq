@@ -29,9 +29,10 @@ type Params struct {
 	SendMode     *PacketMode         // Required.
 	ReceiveModes map[int]*PacketMode // Defaults to SendMode.
 	S3Creds      []byte
-	S3Region     string // Required.
-	S3Bucket     string // Required.
+	S3Region     string // Required unless S3DryRun is set.
+	S3Bucket     string // Required unless S3DryRun is set.
 	S3Prefix     string
+	S3DryRun     bool
 	Log          Log
 }
 
@@ -107,7 +108,7 @@ func Serve(p *Params) (err error) {
 	go receiveLoop(local, remotes, p.ReceiveModes, notifyState, reply, log)
 	go transmitLoop(local, remotes, notifyTransmit, reply, log)
 
-	if err = initStorage(local, remotes, notifyStorage, reply, p.S3Creds, p.S3Region, p.S3Bucket, p.S3Prefix, log); err != nil {
+	if err = initStorage(local, remotes, notifyStorage, reply, p.S3Creds, p.S3Region, p.S3Bucket, p.S3Prefix, p.S3DryRun, log); err != nil {
 		return
 	}
 

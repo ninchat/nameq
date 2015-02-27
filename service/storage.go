@@ -36,7 +36,7 @@ func randomStorageInterval() time.Duration {
 	return randomDuration(minStorageInterval, maxStorageInterval)
 }
 
-func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, credData []byte, region, bucket, prefix string, log *Log) (err error) {
+func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, credData []byte, region, bucket, prefix string, dryRun bool, log *Log) (err error) {
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
@@ -48,7 +48,11 @@ func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{},
 		return
 	}
 
-	client := s3.New(creds, region, nil)
+	var client *s3.S3
+
+	if !dryRun {
+		client = s3.New(creds, region, nil)
+	}
 
 	if err = updateStorage(local, client, bucket, localKey, log); err != nil {
 		return
@@ -214,6 +218,10 @@ func putObject(client *s3.S3, bucket string, key string, body []byte, contentTyp
 		Key:           &key,
 	}
 
+	if client == nil {
+		return
+	}
+
 	if _, err = client.PutObject(request); err != nil {
 		err = fmt.Errorf("S3 PutObject: %s", err)
 	}
@@ -245,13 +253,18 @@ func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *
 		Prefix: &prefix,
 	}
 
+	channel = make(chan *s3.Object)
+
+	if client == nil {
+		close(channel)
+		return
+	}
+
 	output, err := client.ListObjects(request)
 	if err != nil {
 		log.Errorf("S3 ListObjects: %s", err)
 		return
 	}
-
-	channel = make(chan *s3.Object)
 
 	go func() {
 		defer close(channel)
