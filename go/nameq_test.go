@@ -12,7 +12,10 @@ import (
 )
 
 var (
-	monitorLogger = log.New(os.Stdout, "", 0)
+	serviceErrorLogger = log.New(os.Stderr, "service error: ", 0)
+	serviceInfoLogger  = log.New(os.Stderr, "service info: ", 0)
+	serviceDebugLogger = log.New(os.Stderr, "service debug: ", 0)
+	monitorLogger      = log.New(os.Stderr, "monitor: ", 0)
 )
 
 func Test(t *testing.T) {
@@ -48,6 +51,11 @@ func Test(t *testing.T) {
 			Secret: []byte("swordfish"),
 		},
 		S3DryRun: true,
+		Log: service.Log{
+			ErrorLogger: serviceErrorLogger,
+			InfoLogger:  serviceInfoLogger,
+			DebugLogger: serviceDebugLogger,
+		},
 	})
 
 	m, err := NewFeatureMonitor(stateDir, monitorLogger)
