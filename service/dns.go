@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"net"
@@ -11,7 +11,7 @@ var (
 	ipv4local = net.IPv4(127, 0, 0, 1)
 )
 
-func initDNS(local *LocalNode, remotes *RemoteNodes, addr string, tcp, udp bool, resolvConf string, log *Log) (err error) {
+func initDNS(local *localNode, remotes *remoteNodes, addr string, tcp, udp bool, resolvConf string, log *Log) (err error) {
 	if !(tcp || udp) {
 		return
 	}
@@ -59,7 +59,7 @@ func initDNS(local *LocalNode, remotes *RemoteNodes, addr string, tcp, udp bool,
 }
 
 // lookupHost finds a local or remote node name.
-func lookupHost(local *LocalNode, remotes *RemoteNodes, name string) net.IP {
+func lookupHost(local *localNode, remotes *remoteNodes, name string) net.IP {
 	if strings.HasSuffix(name, ".") {
 		name = name[:len(name)-1]
 	}
@@ -72,7 +72,7 @@ func lookupHost(local *LocalNode, remotes *RemoteNodes, name string) net.IP {
 }
 
 // handleGeneral responds to a non-specific DNS request.
-func handleGeneral(local *LocalNode, remotes *RemoteNodes, config *dns.ClientConfig, log *Log, w dns.ResponseWriter, m *dns.Msg) {
+func handleGeneral(local *localNode, remotes *remoteNodes, config *dns.ClientConfig, log *Log, w dns.ResponseWriter, m *dns.Msg) {
 	if len(m.Question) == 1 {
 		lowerName := strings.ToLower(m.Question[0].Name)
 
@@ -86,7 +86,7 @@ func handleGeneral(local *LocalNode, remotes *RemoteNodes, config *dns.ClientCon
 }
 
 // handleSearchs responds to a specific DNS request.
-func handleSearch(local *LocalNode, remotes *RemoteNodes, config *dns.ClientConfig, log *Log, w dns.ResponseWriter, m *dns.Msg) {
+func handleSearch(local *localNode, remotes *remoteNodes, config *dns.ClientConfig, log *Log, w dns.ResponseWriter, m *dns.Msg) {
 	if len(m.Question) == 1 {
 		lowerName := strings.ToLower(m.Question[0].Name)
 

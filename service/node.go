@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -13,10 +13,8 @@ import (
 	"unsafe"
 )
 
-func resolveAddr(ipAddr string, port int) (addr *net.UDPAddr, err error) {
-	return net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", ipAddr, port))
-}
-
+// Node is a JSON-compatible representation of a host.  IPAddr and TimeNs are
+// used when sending via UDP, but not when stored in S3.
 type Node struct {
 	IPAddr   string                      `json:"ip_addr,omitempty"`
 	TimeNs   int64                       `json:"time_ns,omitempty"`
@@ -24,14 +22,14 @@ type Node struct {
 	Features map[string]*json.RawMessage `json:"features,omitempty"`
 }
 
-type LocalNode struct {
+type localNode struct {
 	ipAddr string
 	conn   *net.UDPConn
-	mode   *Mode
+	mode   *PacketMode
 	node   unsafe.Pointer
 }
 
-func newLocalNode(ipAddr string, port int, mode *Mode) (local *LocalNode, err error) {
+func newLocalNode(ipAddr string, port int, mode *PacketMode) (local *localNode, err error) {
 	addr, err := resolveAddr(ipAddr, port)
 	if err != nil {
 		return
@@ -42,7 +40,7 @@ func newLocalNode(ipAddr string, port int, mode *Mode) (local *LocalNode, err er
 		return
 	}
 
-	local = &LocalNode{
+	local = &localNode{
 		ipAddr: ipAddr,
 		conn:   conn,
 		mode:   mode,
@@ -53,19 +51,19 @@ func newLocalNode(ipAddr string, port int, mode *Mode) (local *LocalNode, err er
 	return
 }
 
-func (local *LocalNode) String() string {
+func (local *localNode) String() string {
 	return local.ipAddr
 }
 
-func (local *LocalNode) getNode() *Node {
+func (local *localNode) getNode() *Node {
 	return (*Node)(atomic.LoadPointer(&local.node))
 }
 
-func (local *LocalNode) setNode(node *Node) {
+func (local *localNode) setNode(node *Node) {
 	atomic.StorePointer(&local.node, unsafe.Pointer(node))
 }
 
-func (local *LocalNode) encodeForPacket(w io.Writer) error {
+func (local *localNode) encodeForPacket(w io.Writer) error {
 	node := local.getNode()
 
 	return json.NewEncoder(w).Encode(&Node{
@@ -76,7 +74,7 @@ func (local *LocalNode) encodeForPacket(w io.Writer) error {
 	})
 }
 
-func (local *LocalNode) marshalForStorage() (data []byte, err error) {
+func (local *localNode) marshalForStorage() (data []byte, err error) {
 	node := local.getNode()
 
 	data, err = json.MarshalIndent(&Node{
@@ -91,7 +89,7 @@ func (local *LocalNode) marshalForStorage() (data []byte, err error) {
 	return
 }
 
-func (local *LocalNode) hasName(name string) (found bool) {
+func (local *localNode) hasName(name string) (found bool) {
 	for _, localName := range local.getNode().Names {
 		if name == localName {
 			found = true
@@ -102,7 +100,7 @@ func (local *LocalNode) hasName(name string) (found bool) {
 	return
 }
 
-func (local *LocalNode) updateNames(newNames []string) (update bool) {
+func (local *localNode) updateNames(newNames []string) (update bool) {
 	oldNode := local.getNode()
 
 	sort.Strings(newNames)
@@ -128,7 +126,7 @@ func (local *LocalNode) updateNames(newNames []string) (update bool) {
 	return
 }
 
-func (local *LocalNode) updateFeatures(newFeatures map[string]*json.RawMessage) (update bool) {
+func (local *localNode) updateFeatures(newFeatures map[string]*json.RawMessage) (update bool) {
 	oldNode := local.getNode()
 
 	for name, newValue := range newFeatures {
@@ -159,31 +157,31 @@ func (local *LocalNode) updateFeatures(newFeatures map[string]*json.RawMessage) 
 	return
 }
 
-type RemoteNode struct {
+type remoteNode struct {
 	addr *net.UDPAddr
 	node *Node
 }
 
-func (remote *RemoteNode) String() string {
+func (remote *remoteNode) String() string {
 	return remote.node.IPAddr
 }
 
-type RemoteNodes struct {
+type remoteNodes struct {
 	port    int
 	lock    sync.RWMutex
-	ipAddrs map[string]*RemoteNode
-	names   map[string][]*RemoteNode
+	ipAddrs map[string]*remoteNode
+	names   map[string][]*remoteNode
 }
 
-func newRemoteNodes(port int) *RemoteNodes {
-	return &RemoteNodes{
+func newRemoteNodes(port int) *remoteNodes {
+	return &remoteNodes{
 		port:    port,
-		ipAddrs: make(map[string]*RemoteNode),
-		names:   make(map[string][]*RemoteNode),
+		ipAddrs: make(map[string]*remoteNode),
+		names:   make(map[string][]*remoteNode),
 	}
 }
 
-func (remotes *RemoteNodes) updatable(ipAddr string, newTime time.Time) bool {
+func (remotes *remoteNodes) updatable(ipAddr string, newTime time.Time) bool {
 	newTimeNs := newTime.UnixNano()
 
 	remotes.lock.RLock()
@@ -193,7 +191,7 @@ func (remotes *RemoteNodes) updatable(ipAddr string, newTime time.Time) bool {
 	return remote == nil || remote.node.TimeNs < newTimeNs
 }
 
-func (remotes *RemoteNodes) update(newNode *Node, local *LocalNode, log *Log) (newAddr *net.UDPAddr) {
+func (remotes *remoteNodes) update(newNode *Node, local *localNode, log *Log) (newAddr *net.UDPAddr) {
 	remotes.lock.Lock()
 	defer remotes.lock.Unlock()
 
@@ -229,7 +227,7 @@ func (remotes *RemoteNodes) update(newNode *Node, local *LocalNode, log *Log) (n
 	if remote == nil {
 		newAddr, _ = resolveAddr(newNode.IPAddr, remotes.port)
 
-		remote = &RemoteNode{
+		remote = &remoteNode{
 			addr: newAddr,
 		}
 
@@ -246,7 +244,7 @@ func (remotes *RemoteNodes) update(newNode *Node, local *LocalNode, log *Log) (n
 	return
 }
 
-func (remotes *RemoteNodes) claimName(name string, remote *RemoteNode, local *LocalNode, reclaim bool, log *Log) {
+func (remotes *remoteNodes) claimName(name string, remote *remoteNode, local *localNode, reclaim bool, log *Log) {
 	slice := remotes.names[name]
 
 	if len(slice) == 0 {
@@ -256,7 +254,7 @@ func (remotes *RemoteNodes) claimName(name string, remote *RemoteNode, local *Lo
 			return slice[i].node.TimeNs <= remote.node.TimeNs
 		})
 
-		slice = append(slice[:i], append([]*RemoteNode{remote}, slice[i:]...)...)
+		slice = append(slice[:i], append([]*remoteNode{remote}, slice[i:]...)...)
 	}
 
 	remotes.names[name] = slice
@@ -277,7 +275,7 @@ func (remotes *RemoteNodes) claimName(name string, remote *RemoteNode, local *Lo
 	}
 }
 
-func (remotes *RemoteNodes) disclaimName(name string, remote *RemoteNode, local *LocalNode, reclaim bool, log *Log) {
+func (remotes *remoteNodes) disclaimName(name string, remote *remoteNode, local *localNode, reclaim bool, log *Log) {
 	slice := remotes.names[name]
 
 	if len(slice) == 1 {
@@ -303,13 +301,13 @@ func (remotes *RemoteNodes) disclaimName(name string, remote *RemoteNode, local 
 	}
 }
 
-func (remotes *RemoteNodes) expire(threshold time.Time, local *LocalNode, log *Log) {
+func (remotes *remoteNodes) expire(threshold time.Time, local *localNode, log *Log) {
 	thresholdNs := threshold.UnixNano()
 
 	remotes.lock.Lock()
 	defer remotes.lock.Unlock()
 
-	var expired []*RemoteNode
+	var expired []*remoteNode
 
 	for _, remote := range remotes.ipAddrs {
 		if remote.node.TimeNs < thresholdNs {
@@ -327,7 +325,7 @@ func (remotes *RemoteNodes) expire(threshold time.Time, local *LocalNode, log *L
 	}
 }
 
-func (remotes *RemoteNodes) addrs() (addrs []*net.UDPAddr) {
+func (remotes *remoteNodes) addrs() (addrs []*net.UDPAddr) {
 	remotes.lock.RLock()
 	defer remotes.lock.RUnlock()
 
@@ -338,7 +336,7 @@ func (remotes *RemoteNodes) addrs() (addrs []*net.UDPAddr) {
 	return
 }
 
-func (remotes *RemoteNodes) nodes() (nodes []*Node) {
+func (remotes *remoteNodes) nodes() (nodes []*Node) {
 	remotes.lock.RLock()
 	defer remotes.lock.RUnlock()
 
@@ -349,7 +347,7 @@ func (remotes *RemoteNodes) nodes() (nodes []*Node) {
 	return
 }
 
-func (remotes *RemoteNodes) resolve(name string) (ip net.IP) {
+func (remotes *remoteNodes) resolve(name string) (ip net.IP) {
 	remotes.lock.RLock()
 	defer remotes.lock.RUnlock()
 
@@ -359,4 +357,8 @@ func (remotes *RemoteNodes) resolve(name string) (ip net.IP) {
 	}
 
 	return
+}
+
+func resolveAddr(ipAddr string, port int) (addr *net.UDPAddr, err error) {
+	return net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", ipAddr, port))
 }

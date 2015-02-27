@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ const (
 	loopbackIPAddr = "127.0.0.1"
 )
 
-func initState(local *LocalNode, remotes *RemoteNodes, stateDir string, notifyState <-chan struct{}, log *Log) (err error) {
+func initState(local *localNode, remotes *remoteNodes, stateDir string, notifyState <-chan struct{}, log *Log) (err error) {
 	featureDir := filepath.Join(stateDir, "features")
 	tmpDir := filepath.Join(stateDir, ".tmp")
 
@@ -29,7 +29,7 @@ func initState(local *LocalNode, remotes *RemoteNodes, stateDir string, notifySt
 	return
 }
 
-func stateLoop(local *LocalNode, remotes *RemoteNodes, featureDir, tmpDir string, notifyState <-chan struct{}, log *Log) {
+func stateLoop(local *localNode, remotes *remoteNodes, featureDir, tmpDir string, notifyState <-chan struct{}, log *Log) {
 	for range notifyState {
 		filenames := make(map[string]struct{})
 

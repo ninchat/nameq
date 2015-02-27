@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -73,7 +73,7 @@ func scanConfig(dir string, re *regexp.Regexp, handler func(filenames []string),
 	handler(filenames)
 }
 
-func initNameConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, log *Log) error {
+func initNameConfig(local *localNode, arg, dir string, notify chan<- struct{}, log *Log) error {
 	argNames := strings.Fields(arg)
 
 	return watchConfig(dir, nameRE, log, func(filenames []string) {
@@ -107,7 +107,7 @@ func initNameConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, l
 	})
 }
 
-func initFeatureConfig(local *LocalNode, arg, dir string, notify chan<- struct{}, log *Log) (err error) {
+func initFeatureConfig(local *localNode, arg, dir string, notify chan<- struct{}, log *Log) (err error) {
 	var argFeatures map[string]*json.RawMessage
 
 	if arg != "" {

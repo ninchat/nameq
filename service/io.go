@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"net"
@@ -19,7 +19,7 @@ func randomTransmitInterval() time.Duration {
 	return randomDuration(minTransmitInterval, maxTransmitInterval)
 }
 
-func transmitLoop(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{}, reply <-chan []*net.UDPAddr, log *Log) {
+func transmitLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply <-chan []*net.UDPAddr, log *Log) {
 	var replyTo []*net.UDPAddr
 
 	timer := time.NewTimer(randomTransmitInterval())
@@ -75,7 +75,7 @@ func transmitLoop(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{}
 	}
 }
 
-func receiveLoop(local *LocalNode, remotes *RemoteNodes, modes map[byte]*Mode, notify chan<- struct{}, reply chan<- []*net.UDPAddr, log *Log) {
+func receiveLoop(local *localNode, remotes *remoteNodes, modes map[int]*PacketMode, notify chan<- struct{}, reply chan<- []*net.UDPAddr, log *Log) {
 	buf := make([]byte, maxDatagramSize)
 
 	for {

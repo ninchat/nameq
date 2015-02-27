@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -20,15 +20,15 @@ const (
 	expireTimeout = time.Minute
 )
 
-type BytesReadCloser struct {
+type bytesReadCloser struct {
 	*bytes.Reader
 }
 
-func (brc BytesReadCloser) Read(b []byte) (int, error) {
+func (brc bytesReadCloser) Read(b []byte) (int, error) {
 	return brc.Reader.Read(b)
 }
 
-func (BytesReadCloser) Close() (err error) {
+func (bytesReadCloser) Close() (err error) {
 	return
 }
 
@@ -36,7 +36,7 @@ func randomStorageInterval() time.Duration {
 	return randomDuration(minStorageInterval, maxStorageInterval)
 }
 
-func initStorage(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, credData []byte, region, bucket, prefix string, log *Log) (err error) {
+func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, credData []byte, region, bucket, prefix string, log *Log) (err error) {
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
@@ -63,7 +63,7 @@ func initStorage(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{},
 	return
 }
 
-func storageLoop(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix, localKey string, log *Log) {
+func storageLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix, localKey string, log *Log) {
 	timer := time.NewTimer(randomStorageInterval())
 
 	for {
@@ -90,7 +90,7 @@ func storageLoop(local *LocalNode, remotes *RemoteNodes, notify <-chan struct{},
 	}
 }
 
-func updateStorage(local *LocalNode, client *s3.S3, bucket, key string, log *Log) (err error) {
+func updateStorage(local *localNode, client *s3.S3, bucket, key string, log *Log) (err error) {
 	log.Debug("updating S3")
 
 	data, err := local.marshalForStorage()
@@ -102,7 +102,7 @@ func updateStorage(local *LocalNode, client *s3.S3, bucket, key string, log *Log
 	return
 }
 
-func scanStorage(local *LocalNode, remotes *RemoteNodes, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix string, log *Log) (err error) {
+func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix string, log *Log) (err error) {
 	log.Debug("scanning S3")
 
 	objects := listObjects(client, bucket, prefix, log)
@@ -207,7 +207,7 @@ func putObject(client *s3.S3, bucket string, key string, body []byte, contentTyp
 	contentLength := int64(len(body))
 
 	request := &s3.PutObjectRequest{
-		Body:          BytesReadCloser{bytes.NewReader(body)},
+		Body:          bytesReadCloser{bytes.NewReader(body)},
 		Bucket:        &bucket,
 		ContentLength: &contentLength,
 		ContentType:   &contentType,

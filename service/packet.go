@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"bytes"
@@ -10,15 +10,22 @@ import (
 	"net"
 )
 
+// PacketMode specifies a shared UDP packet configuration.
+type PacketMode struct {
+	Id     int    // Identifies the configuration.  Must be in range [0..255].
+	Secret []byte // The shared HMAC-SHA1 key.
+}
+
 var (
-	compressDict = []byte("{\"ip_addr\":\",\"time_ns\":,\"names\":[\",\"],\"features\":{\":true,\"}}}")
+	// Preset dictionary used for compressing UDP packets with DEFLATE.
+	PacketCompressionDict = []byte("{\"ip_addr\":\",\"time_ns\":,\"names\":[\",\"],\"features\":{\":true,\"}}}")
 )
 
-func marshalPacket(local *LocalNode) (data []byte, err error) {
+func marshalPacket(local *localNode) (data []byte, err error) {
 	var buf bytes.Buffer
-	buf.WriteByte(local.mode.Id)
+	buf.WriteByte(byte(local.mode.Id))
 
-	inflater, err := flate.NewWriterDict(&buf, flate.DefaultCompression, compressDict)
+	inflater, err := flate.NewWriterDict(&buf, flate.DefaultCompression, PacketCompressionDict)
 	if err != nil {
 		return
 	}
@@ -35,7 +42,7 @@ func marshalPacket(local *LocalNode) (data []byte, err error) {
 	return
 }
 
-func unmarshalPacket(data []byte, modes map[byte]*Mode) (node *Node, err error) {
+func unmarshalPacket(data []byte, modes map[int]*PacketMode) (node *Node, err error) {
 	const modeIdLength = 1
 	const digestLength = 20
 
@@ -47,11 +54,11 @@ func unmarshalPacket(data []byte, modes map[byte]*Mode) (node *Node, err error) 
 		return
 	}
 
-	modeId := data[0]
+	modeId := int(data[0])
 
 	mode := modes[modeId]
 	if mode == nil {
-		err = fmt.Errorf("packet has unknown mode: %d", uint(modeId))
+		err = fmt.Errorf("packet has unknown mode: %d", modeId)
 		return
 	}
 
@@ -61,13 +68,13 @@ func unmarshalPacket(data []byte, modes map[byte]*Mode) (node *Node, err error) 
 	mac := hmac.New(sha1.New, mode.Secret)
 	mac.Write(message)
 	if !hmac.Equal(mac.Sum(nil), digest) {
-		err = fmt.Errorf("packet is inauthentic (mode %d)", uint(modeId))
+		err = fmt.Errorf("packet is inauthentic (mode %d)", modeId)
 		return
 	}
 
 	compressed := data[modeIdLength:messageLength]
 
-	deflater := flate.NewReaderDict(bytes.NewBuffer(compressed), compressDict)
+	deflater := flate.NewReaderDict(bytes.NewBuffer(compressed), PacketCompressionDict)
 	defer deflater.Close()
 
 	node = new(Node)
