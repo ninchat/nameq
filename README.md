@@ -65,6 +65,12 @@ creation, modification and removal is atomic; e.g. inotify can be used to
 monitor changes in real time.
 
 
+## Source repository contents
+
+- The top-level directory contains Go sources for the nameq service.
+- The [`go`](go) subdirectory contains a Go package for use by applications.
+
+
 ## Dependencies
 
 - Go
