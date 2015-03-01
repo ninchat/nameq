@@ -87,5 +87,55 @@ monitor changes in real time.
 
 ## Usage
 
-	# ./nameq -h
+	$ ./nameq -h
+
+
+## Dockerization
+
+Build an image:
+
+	$ docker build -t nameq .
+
+Run a container with host network interface and a copy of the original
+resolv.conf:
+
+	$ cp /etc/resolv.conf /etc/nameq/resolv.conf
+
+	$ docker run \
+		--name=nameq \
+		--net=host \
+		--volume=SECRETFILE:/etc/nameq/secret \
+		--volume=S3CREDFILE:/etc/nameq/s3creds \
+		--volume=/etc/nameq/resolv.conf:/etc/nameq/resolv.conf \
+		nameq \
+			-secretfile=/etc/nameq/secret \
+			-s3credfile=/etc/nameq/s3creds \
+			-s3region=REGION \
+			-s3bucket=BUCKET
+
+	$ echo nameserver 127.0.0.1 > /etc/resolv.conf
+
+Alter local names:
+
+	$ docker run \
+		--rm \
+		--volumes-from=nameq \
+		debian \
+		touch /etc/nameq/names/HOSTNAME
+
+	$ nslookup HOSTNAME
+
+Alter local features:
+
+	$ docker run \
+		--rm \
+		--volumes-from=nameq \
+		debian \
+		bash -c 'echo true > /etc/nameq/features/FEATURE'
+
+	$ docker run \
+		--rm \
+		--volumes-from=nameq \
+		debian \
+		find /run/nameq/state/features
 
