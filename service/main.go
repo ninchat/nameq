@@ -9,7 +9,7 @@ const (
 	DefaultPort       = 17106
 	DefaultNameDir    = "/etc/nameq/names"
 	DefaultFeatureDir = "/etc/nameq/features"
-	DefaultStateDir   = "/run/nameq"
+	DefaultStateDir   = "/run/nameq/state"
 	DefaultResolvConf = "/etc/nameq/resolv.conf"
 )
 

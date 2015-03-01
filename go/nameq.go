@@ -13,7 +13,7 @@ import (
 
 const (
 	// The directory used when an empty string is given to NewFeatureMonitor.
-	DefaultStateDir = "/run/nameq"
+	DefaultStateDir = "/run/nameq/state"
 )
 
 // Feature represents a momentary state of a feature on a host.
