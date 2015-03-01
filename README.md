@@ -61,8 +61,9 @@ Network-wide feature configuration is written to a directory tree (rooted at
 In other words, information about each host implementing a feature is contained
 in a directory named after the feature, and the files are named after the
 hosts' IP addresses.  The files contain feature parameters as JSON.  File
-creation, modification and removal is atomic; e.g. inotify can be used to
-monitor changes in real time.
+creation, modification and removal is atomic, and e.g.
+[inotify](https://en.wikipedia.org/wiki/Inotify) can be used to monitor changes
+in real time.
 
 
 ## Source repository contents
@@ -74,10 +75,10 @@ monitor changes in real time.
 
 ## Dependencies
 
-- Go
-- github.com/awslabs/aws-sdk-go
-- github.com/miekg/dns
-- golang.org/x/exp/inotify
+- [Go](https://golang.org)
+- [github.com/awslabs/aws-sdk-go](https://github.com/awslabs/aws-sdk-go)
+- [github.com/miekg/dns](https://github.com/miekg/dns)
+- [golang.org/x/exp/inotify](https://golang.org/x/exp/inotify)
 
 
 ## Building
