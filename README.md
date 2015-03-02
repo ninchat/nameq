@@ -70,7 +70,8 @@ in real time.
 
 - The top-level and [service](service) directories contain Go sources for the
   nameq program.
-- The [go](go) directory contains a Go package for use by application code.
+- The [go](go) directory contains a library for Go applications.
+- The [python](python) directory contains a library for Python applications.
 
 
 ## Dependencies
