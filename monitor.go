@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"syscall"
 
 	nameq "./go"
@@ -40,6 +41,13 @@ func monitorFeatures() {
 		flag.Usage()
 		os.Exit(2)
 	}
+
+	signals := make(chan os.Signal)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-signals
+		os.Exit(0)
+	}()
 
 	logger := log.New(os.Stderr, subprog+": ", 0)
 
