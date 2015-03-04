@@ -91,11 +91,8 @@ class _FeatureMonitor(object):
 		if event.mask & inotify.CREATE:
 			self._add_feature(event.name)
 
-		if event.mask & inotify.DELETE:
-			if os.path.dirname(event.name) == self._featuredir:
-				self._remove_feature(event.name)
-			else:
-				self._remove_host(event.name)
+		if event.mask & inotify.DELETE and os.path.dirname(event.name) != self._featuredir:
+			self._remove_host(event.name)
 
 		if event.mask & inotify.DELETE_SELF:
 			self.close()
@@ -110,12 +107,6 @@ class _FeatureMonitor(object):
 		except Exception:
 			log.exception("adding watch for %s", path)
 			return False
-
-	def _remove_feature(self, path):
-		try:
-			inotify.rm_watch(self._fd, path)
-		except Exception:
-			log.exception("removing watch for %s", path)
 
 	def _add_host(self, path):
 		try:

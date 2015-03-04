@@ -122,12 +122,8 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, featureDir string) {
 				m.addFeature(e.Name)
 			}
 
-			if (e.Mask & inotify.IN_DELETE) != 0 {
-				if filepath.Dir(e.Name) == featureDir {
-					m.removeFeature(e.Name)
-				} else {
-					m.removeHost(filepath.Base(e.Name), e.Name)
-				}
+			if (e.Mask & inotify.IN_DELETE) != 0 && filepath.Dir(e.Name) != featureDir {
+				m.removeHost(filepath.Base(e.Name), e.Name)
 			}
 
 			if (e.Mask & inotify.IN_DELETE_SELF) != 0 {
@@ -164,12 +160,6 @@ func (m *FeatureMonitor) addFeature(dir string) {
 
 	for _, info := range infos {
 		m.addHost(info.Name(), filepath.Join(dir, info.Name()))
-	}
-}
-
-func (m *FeatureMonitor) removeFeature(dir string) {
-	if err := m.watcher.RemoveWatch(dir); err != nil {
-		m.log(err)
 	}
 }
 
