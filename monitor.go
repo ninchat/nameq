@@ -25,6 +25,9 @@ func monitorFeatures() {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintf(os.Stderr, "This command prints the current state, followed by updates in real time until terminated with a signal.  The output lines are formatted like this (excluding quotes):\n\n")
+		fmt.Fprintf(os.Stderr, "  \"NAME<tab>HOST<tab>STATE\"\n\n")
+		fmt.Fprintf(os.Stderr, "NAME is a feature name.  HOST is the IPv4 or IPv6 address of a host where the feature exists.  STATE is either \"on\" or \"off\" (excluding quotes).  The JSON configurations of features are not available via this command.\n\n")
 	}
 
 	flag.StringVar(&stateDir, "statedir", stateDir, "runtime state root location")
