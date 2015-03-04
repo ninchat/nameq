@@ -12,7 +12,7 @@ import (
 	"./service"
 )
 
-func configureName() {
+func name() {
 	var (
 		nameDir = service.DefaultNameDir
 		rm      = false
@@ -50,7 +50,7 @@ func configureName() {
 	}
 }
 
-func configureFeature() {
+func feature() {
 	var (
 		featureDir = service.DefaultFeatureDir
 		rm         = false

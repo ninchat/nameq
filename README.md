@@ -89,7 +89,7 @@ in real time.
 
 ## Usage
 
-	$ ./nameq service -h
+	$ ./nameq -h
 
 
 ## Dockerization
@@ -109,7 +109,7 @@ resolv.conf:
 		--volume=SECRETFILE:/etc/nameq/secret \
 		--volume=S3CREDFILE:/etc/nameq/s3creds \
 		--volume=/etc/nameq/resolv.conf:/etc/nameq/resolv.conf \
-		nameq \
+		nameq serve \
 			-secretfile=/etc/nameq/secret \
 			-s3credfile=/etc/nameq/s3creds \
 			-s3region=REGION \
@@ -122,8 +122,7 @@ Alter local names:
 	$ docker run \
 		--rm \
 		--volumes-from=nameq \
-		debian \
-		touch /etc/nameq/names/HOSTNAME
+		nameq name HOSTNAME
 
 	$ nslookup HOSTNAME
 
@@ -132,12 +131,10 @@ Alter local features:
 	$ docker run \
 		--rm \
 		--volumes-from=nameq \
-		debian \
-		bash -c 'echo true > /etc/nameq/features/FEATURE'
+		nameq feature FEATURE true
 
 	$ docker run \
 		--rm \
 		--volumes-from=nameq \
-		debian \
-		find /run/nameq/state/features
+		nameq monitor-features
 

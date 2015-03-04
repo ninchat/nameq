@@ -8,7 +8,7 @@ VOLUME /etc/nameq/names
 VOLUME /etc/nameq/features
 VOLUME /run/nameq/state
 
-ENTRYPOINT ["nameq", "service"]
+ENTRYPOINT ["nameq"]
 
 RUN apt-get update && apt-get -y install ca-certificates && apt-get clean
 
