@@ -89,7 +89,7 @@ in real time.
 
 ## Usage
 
-	$ ./nameq -h
+	$ ./nameq service -h
 
 
 ## Dockerization

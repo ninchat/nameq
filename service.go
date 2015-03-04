@@ -19,7 +19,7 @@ const (
 	DefaultDNSUDP  = true
 )
 
-func main() {
+func serve() {
 	p := &service.Params{
 		Addr:       service.GuessAddr(),
 		Port:       service.DefaultPort,
@@ -43,8 +43,8 @@ func main() {
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -addr=IPADDR -secretfile=PATH -s3region=REGION -s3bucket=BUCKET\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "All options:\n")
+		fmt.Fprintf(os.Stderr, "Usage: %s -secretfile=PATH -s3region=REGION -s3bucket=BUCKET [OPTIONS]\n\n", subprog)
+		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintf(os.Stderr, "The local IP address is guessed if not specified.  The guess may be wrong.\n\n")
