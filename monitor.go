@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"syscall"
 
 	nameq "./go"
 )
@@ -25,7 +26,7 @@ func monitorFeatures() {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintf(os.Stderr, "This command prints the current state, followed by updates in real time until terminated with a signal.  The output lines are formatted like this (excluding quotes):\n\n")
+		fmt.Fprintf(os.Stderr, "This command prints the current state, followed by updates in real time (until terminated with a signal or output pipe is closed).  The output lines are formatted like this (excluding quotes):\n\n")
 		fmt.Fprintf(os.Stderr, "  \"NAME<tab>HOST<tab>STATE\"\n\n")
 		fmt.Fprintf(os.Stderr, "NAME is a feature name.  HOST is the IPv4 or IPv6 address of a host where the feature exists.  STATE is either \"on\" or \"off\" (excluding quotes).  The JSON configurations of features are not available via this command.\n\n")
 	}
@@ -61,6 +62,15 @@ func monitorFeatures() {
 			state = "off"
 		}
 
-		fmt.Printf("%s\t%s\t%s\n", f.Name, f.Host, state)
+		if _, err := fmt.Printf("%s\t%s\t%s\n", f.Name, f.Host, state); err != nil {
+			if pathErr, ok := err.(*os.PathError); ok {
+				if errno, ok := pathErr.Err.(syscall.Errno); ok && errno == syscall.EPIPE {
+					os.Exit(0)
+				}
+			}
+
+			logger.Print(err)
+			os.Exit(1)
+		}
 	}
 }
