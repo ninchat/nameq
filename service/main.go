@@ -9,8 +9,8 @@ import (
 // Default values for some Params.
 const (
 	DefaultPort       = 17106
-	DefaultNameDir    = "/etc/nameq/names"
-	DefaultFeatureDir = "/etc/nameq/features"
+	DefaultNameDir    = nameq.DefaultNameDir
+	DefaultFeatureDir = nameq.DefaultFeatureDir
 	DefaultStateDir   = nameq.DefaultStateDir
 	DefaultResolvConf = "/etc/nameq/resolv.conf"
 )

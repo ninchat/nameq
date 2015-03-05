@@ -6,20 +6,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"syscall"
 
-	"./service"
+	nameq "./go"
 )
 
-func name() {
+func name(prog string) error {
 	var (
-		nameDir = service.DefaultNameDir
+		nameDir = nameq.DefaultNameDir
 		rm      = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME\n\n", subprog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME\n\n", prog)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
@@ -44,20 +42,20 @@ func name() {
 	}
 
 	if rm {
-		removeFile(nameDir, name)
+		return nameq.RemoveName(nameDir, name)
 	} else {
-		createFile(nameDir, name, nil)
+		return nameq.SetName(nameDir, name)
 	}
 }
 
-func feature() {
+func feature(prog string) (err error) {
 	var (
-		featureDir = service.DefaultFeatureDir
+		featureDir = nameq.DefaultFeatureDir
 		rm         = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME [VALUE]\n\n", subprog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME [VALUE]\n\n", prog)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
@@ -93,69 +91,28 @@ func feature() {
 			os.Exit(2)
 		}
 
-		removeFile(featureDir, name)
+		err = nameq.RemoveFeature(featureDir, name)
 	} else {
 		if data == nil {
-			var err error
-
 			data, err = ioutil.ReadAll(os.Stdin)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-				os.Exit(1)
+				return
 			}
 		}
 
 		var value json.RawMessage
 
-		if err := json.Unmarshal(data, &value); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-			os.Exit(2)
+		if err = json.Unmarshal(data, &value); err != nil {
+			return
 		}
 
-		data, err := json.MarshalIndent(&value, "", "\t")
-		if err != nil {
-			panic(err)
+		if data, err = json.MarshalIndent(&value, "", "\t"); err != nil {
+			return
 		}
 
 		data = append(data, '\n')
 
-		createFile(featureDir, name, data)
+		err = nameq.SetFeature(featureDir, name, data)
 	}
-}
-
-func createFile(dir, name string, data []byte) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-		os.Exit(1)
-	}
-
-	tmpDir := filepath.Join(dir, ".tmp")
-	os.Mkdir(tmpDir, 0700)
-
-	tmpPath := filepath.Join(tmpDir, name)
-
-	if err := ioutil.WriteFile(tmpPath, data, 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-		os.Exit(1)
-	}
-
-	path := filepath.Join(dir, name)
-
-	if err := os.Rename(tmpPath, path); err != nil {
-		os.Remove(tmpPath)
-		fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-		os.Exit(1)
-	}
-}
-
-func removeFile(dir, name string) {
-	path := filepath.Join(dir, name)
-
-	if err := os.Remove(path); err != nil {
-		pathErr := err.(*os.PathError)
-		if pathErr.Err != syscall.ENOENT {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
-			os.Exit(1)
-		}
-	}
+	return
 }

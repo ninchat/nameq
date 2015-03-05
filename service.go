@@ -19,7 +19,7 @@ const (
 	DefaultDNSUDP  = true
 )
 
-func serve() {
+func serve(prog string) (err error) {
 	p := &service.Params{
 		Addr:       service.GuessAddr(),
 		Port:       service.DefaultPort,
@@ -43,7 +43,7 @@ func serve() {
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -secretfile=PATH -s3region=REGION -s3bucket=BUCKET [OPTIONS]\n\n", subprog)
+		fmt.Fprintf(os.Stderr, "Usage: %s -secretfile=PATH -s3region=REGION -s3bucket=BUCKET [OPTIONS]\n\n", prog)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
@@ -83,13 +83,11 @@ func serve() {
 		os.Exit(2)
 	}
 
-	var err error
 	var logWriter io.Writer = os.Stderr
 
 	if syslogArg != "" {
 		if logWriter, err = syslog.Dial(syslogNet, syslogArg, syslog.LOG_ERR|syslog.LOG_DAEMON, "nameq"); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return
 		}
 	}
 
@@ -104,7 +102,7 @@ func serve() {
 	secret, err := readFile(secretFd, secretFile)
 	if err != nil {
 		log.Error(err)
-		os.Exit(1)
+		return
 	}
 
 	p.SendMode = &service.PacketMode{
@@ -114,13 +112,13 @@ func serve() {
 	p.S3Creds, err = readFile(s3CredFd, s3CredFile)
 	if err != nil {
 		log.Error(err)
-		os.Exit(1)
+		return
 	}
 
-	if err := service.Serve(p); err != nil {
+	if err = service.Serve(p); err != nil {
 		log.Error(err)
-		os.Exit(1)
 	}
+	return
 }
 
 func readFile(fd int, path string) (data []byte, err error) {

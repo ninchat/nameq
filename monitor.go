@@ -16,14 +16,14 @@ var (
 	localHost = net.IPv4(127, 0, 0, 1)
 )
 
-func monitorFeatures() {
+func monitorFeatures(prog string) (err error) {
 	var (
 		stateDir = nameq.DefaultStateDir
 		local    = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n\n", subprog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n\n", prog)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
@@ -49,12 +49,11 @@ func monitorFeatures() {
 		os.Exit(0)
 	}()
 
-	logger := log.New(os.Stderr, subprog+": ", 0)
+	logger := log.New(os.Stderr, prog+": ", 0)
 
 	monitor, err := nameq.NewFeatureMonitor(stateDir, logger)
 	if err != nil {
-		logger.Print(err)
-		os.Exit(1)
+		return
 	}
 
 	for f := range monitor.C {
@@ -70,15 +69,15 @@ func monitorFeatures() {
 			state = "off"
 		}
 
-		if _, err := fmt.Printf("%s\t%s\t%s\n", f.Name, f.Host, state); err != nil {
+		if _, err = fmt.Printf("%s\t%s\t%s\n", f.Name, f.Host, state); err != nil {
 			if pathErr, ok := err.(*os.PathError); ok {
 				if errno, ok := pathErr.Err.(syscall.Errno); ok && errno == syscall.EPIPE {
-					os.Exit(0)
+					err = nil
 				}
 			}
-
-			logger.Print(err)
-			os.Exit(1)
+			return
 		}
 	}
+
+	return
 }

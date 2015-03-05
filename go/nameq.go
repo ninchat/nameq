@@ -7,14 +7,97 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"golang.org/x/exp/inotify"
 )
 
 const (
+	// The directory used when an empty string is given to SetName or RemoveName.
+	DefaultNameDir = "/etc/nameq/names"
+
+	// The directory used when an empty string is given to SetFeature or RemoveFeature.
+	DefaultFeatureDir = "/etc/nameq/features"
+
 	// The directory used when an empty string is given to NewFeatureMonitor.
 	DefaultStateDir = "/run/nameq/state"
 )
+
+// SetName adds a local hostname.  DefaultNameDir is used if an empty string is
+// given.  Redundant calls are ok.
+func SetName(nameDir, name string) error {
+	if nameDir == "" {
+		nameDir = DefaultNameDir
+	}
+
+	return createConfigFile(nameDir, name, nil)
+}
+
+// RemoveName removes a local hostname.  DefaultNameDir is used if an empty
+// string is given.  Redundant calls are ok.
+func RemoveName(nameDir, name string) error {
+	if nameDir == "" {
+		nameDir = DefaultNameDir
+	}
+
+	return removeConfigFile(nameDir, name)
+}
+
+// SetFeature adds or updates a local feature.  data must be a valid JSON
+// document.  DefaultFeatureDir is used if an empty string is given.  Redundant
+// calls are ok.
+func SetFeature(featureDir, name string, data []byte) error {
+	if featureDir == "" {
+		featureDir = DefaultFeatureDir
+	}
+
+	if len(data) == 0 {
+		panic("no data for feature")
+	}
+
+	return createConfigFile(featureDir, name, data)
+}
+
+// RemoveFeature removes a local feature.  DefaultFeatureDir is used if an
+// empty string is given.  Redundant calls are ok.
+func RemoveFeature(featureDir, name string) error {
+	if featureDir == "" {
+		featureDir = DefaultFeatureDir
+	}
+
+	return removeConfigFile(featureDir, name)
+}
+
+func createConfigFile(dir, name string, data []byte) (err error) {
+	if err = os.MkdirAll(dir, 0755); err != nil {
+		return
+	}
+
+	tmpDir := filepath.Join(dir, ".tmp")
+	os.Mkdir(tmpDir, 0700)
+
+	tmpPath := filepath.Join(tmpDir, name)
+
+	if err = ioutil.WriteFile(tmpPath, data, 0644); err != nil {
+		return
+	}
+
+	path := filepath.Join(dir, name)
+
+	if err = os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
+	}
+	return
+}
+
+func removeConfigFile(dir, name string) (err error) {
+	if err = os.Remove(filepath.Join(dir, name)); err != nil {
+		if err.(*os.PathError).Err == syscall.ENOENT {
+			err = nil
+		}
+	}
+	return
+}
 
 // Feature represents a momentary state of a feature on a host.
 type Feature struct {
