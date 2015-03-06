@@ -17,7 +17,7 @@ const (
 	minStorageInterval = time.Second * 120
 	maxStorageInterval = time.Second * 240
 
-	expireTimeout = time.Minute
+	expireTimeout = time.Minute * 15
 )
 
 type bytesReadCloser struct {
