@@ -50,13 +50,14 @@ class _FeatureMonitor(object):
 				raise
 
 		self._featuredir = os.path.realpath(featuredir)
-
+		self._wd_featurepaths = {}
+		self._featurename_wds = {}
 		self._queued_features = []
 
 		self._fd = inotify.init(inotify.CLOEXEC|inotify.NONBLOCK)
 		ok = False
 		try:
-			inotify.add_watch(self._fd, self._featuredir, inotify.ONLYDIR|inotify.CREATE|inotify.DELETE|inotify.DELETE_SELF)
+			self._featuredir_wd = inotify.add_watch(self._fd, self._featuredir, inotify.ONLYDIR|inotify.CREATE|inotify.DELETE|inotify.DELETE_SELF)
 			ok = True
 		finally:
 			if not ok:
@@ -69,14 +70,15 @@ class _FeatureMonitor(object):
 		else:
 			for featurename in featurenames:
 				featurepath = os.path.join(self._featuredir, featurename)
-				if self._add_feature(featurepath):
+				wd = self._add_feature(featurepath)
+				if wd is not None:
 					try:
 						hostnames = os.listdir(featurepath)
 					except Exception as e:
 						log.exception("listing %s", featurepath)
 					else:
 						for hostname in hostnames:
-							self._add_host(os.path.join(featurepath, hostname))
+							self._add_host(wd, hostname)
 
 	def __enter__(self):
 		return self
@@ -91,24 +93,40 @@ class _FeatureMonitor(object):
 		if event.mask & inotify.CREATE:
 			self._add_feature(event.name)
 
-		if event.mask & inotify.DELETE and os.path.dirname(event.name) != self._featuredir:
-			self._remove_host(event.name)
+		if event.mask & inotify.DELETE:
+			if event.wd == self._featuredir_wd:
+				self._remove_feature(event.name)
+			else:
+				self._remove_host(event.wd, event.name)
 
 		if event.mask & inotify.DELETE_SELF:
 			self.close()
 
 		if event.mask & inotify.MOVED_TO:
-			self._add_host(event.name)
+			self._add_host(event.wd, event.name)
 
-	def _add_feature(self, path):
+	def _add_feature(self, name):
+		path = os.path.join(self._featuredir, name)
+		wd = None
+
 		try:
-			inotify.add_watch(self._fd, path, inotify.ONLYDIR|inotify.DELETE|inotify.MOVED_TO)
-			return True
+			wd = inotify.add_watch(self._fd, path, inotify.ONLYDIR|inotify.DELETE|inotify.MOVED_TO)
 		except Exception:
 			log.exception("adding watch for %s", path)
-			return False
+		else:
+			self._wd_featurepaths[wd] = path
+			self._featurename_wds[name] = wd
 
-	def _add_host(self, path):
+		return wd
+
+	def _remove_feature(self, name):
+		wd = self._featurename_wds[name]
+		del self._wd_featurepaths[wd]
+		del self._featurename_wds[name]
+
+	def _add_host(self, wd, name):
+		path = os.path.join(self._wd_featurepaths[wd], name)
+
 		try:
 			f = open(path)
 		except Exception:
@@ -123,7 +141,9 @@ class _FeatureMonitor(object):
 
 		self._enqueue_feature(path, data)
 
-	def _remove_host(self, path):
+	def _remove_host(self, wd, name):
+		path = os.path.join(self._wd_featurepaths[wd], name)
+
 		if os.access(path, os.F_OK):
 			return
 
