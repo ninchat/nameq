@@ -19,7 +19,7 @@ const (
 	DefaultDNSUDP  = true
 )
 
-func serve(prog string) (err error) {
+func serve(prog, command string) (err error) {
 	p := &service.Params{
 		Addr:       service.GuessAddr(),
 		Port:       service.DefaultPort,
@@ -43,7 +43,7 @@ func serve(prog string) (err error) {
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -secretfile=PATH -s3region=REGION -s3bucket=BUCKET [OPTIONS]\n\n", prog)
+		fmt.Fprintf(os.Stderr, "Usage: %s -secretfile=PATH -s3region=REGION -s3bucket=BUCKET [OPTIONS]\n\n", command)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
@@ -86,7 +86,7 @@ func serve(prog string) (err error) {
 	var logWriter io.Writer = os.Stderr
 
 	if syslogArg != "" {
-		if logWriter, err = syslog.Dial(syslogNet, syslogArg, syslog.LOG_ERR|syslog.LOG_DAEMON, "nameq"); err != nil {
+		if logWriter, err = syslog.Dial(syslogNet, syslogArg, syslog.LOG_ERR|syslog.LOG_DAEMON, prog); err != nil {
 			return
 		}
 	}

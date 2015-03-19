@@ -10,23 +10,23 @@ func main() {
 	prog := path.Base(os.Args[0])
 
 	if len(os.Args) >= 2 {
-		sub := os.Args[1]
-		subprog := prog + " " + sub
+		subprog := os.Args[1]
+		command := prog + " " + subprog
 
 		os.Args = os.Args[1:]
 
-		switch sub {
+		switch subprog {
 		case "name":
-			exit(subprog, name(subprog))
+			exit(command, name(prog, command))
 
 		case "feature":
-			exit(subprog, feature(subprog))
+			exit(command, feature(prog, command))
 
 		case "monitor-features":
-			exit(subprog, monitorFeatures(subprog))
+			exit(command, monitorFeatures(prog, command))
 
 		case "serve":
-			exit(subprog, serve(subprog))
+			exit(command, serve(prog, command))
 		}
 	}
 
@@ -37,11 +37,11 @@ func main() {
 	os.Exit(2)
 }
 
-func exit(subprog string, err error) {
+func exit(command string, err error) {
 	if err == nil {
 		os.Exit(0)
 	} else {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", subprog, err)
+		fmt.Fprintf(os.Stderr, "%s: %s\n", command, err)
 		os.Exit(1)
 	}
 }

@@ -10,14 +10,14 @@ import (
 	nameq "./go"
 )
 
-func name(prog string) error {
+func name(_, command string) error {
 	var (
 		nameDir = nameq.DefaultNameDir
 		rm      = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME\n\n", prog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME\n\n", command)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
@@ -48,14 +48,14 @@ func name(prog string) error {
 	}
 }
 
-func feature(prog string) (err error) {
+func feature(_, command string) (err error) {
 	var (
 		featureDir = nameq.DefaultFeatureDir
 		rm         = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME [VALUE]\n\n", prog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME [VALUE]\n\n", command)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")

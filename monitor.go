@@ -16,14 +16,14 @@ var (
 	localHost = net.IPv4(127, 0, 0, 1)
 )
 
-func monitorFeatures(prog string) (err error) {
+func monitorFeatures(prog, command string) (err error) {
 	var (
 		stateDir = nameq.DefaultStateDir
 		local    = false
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n\n", prog)
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n\n", command)
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
