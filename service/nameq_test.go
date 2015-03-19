@@ -1,4 +1,4 @@
-package nameq
+package service
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"../service"
+	nameq "../go"
 )
 
 var (
@@ -36,29 +36,29 @@ func Test(t *testing.T) {
 	os.MkdirAll(featureDir, 0700)
 	os.MkdirAll(stateDir, 0700)
 
-	localAddr := service.GuessAddr()
+	localAddr := GuessAddr()
 	if localAddr == "" {
 		localAddr = "127.0.0.1"
 	}
 
-	go service.Serve(&service.Params{
+	go Serve(&Params{
 		Addr:       localAddr,
 		NameDir:    nameDir,
 		Features:   "{ \"feature-1\": true, \"feature-2\": [1, 2, 3] }",
 		FeatureDir: featureDir,
 		StateDir:   stateDir,
-		SendMode: &service.PacketMode{
+		SendMode: &PacketMode{
 			Secret: []byte("swordfish"),
 		},
 		S3DryRun: true,
-		Log: service.Log{
+		Log: Log{
 			ErrorLogger: serviceErrorLogger,
 			InfoLogger:  serviceInfoLogger,
 			DebugLogger: serviceDebugLogger,
 		},
 	})
 
-	m, err := NewFeatureMonitor(stateDir, monitorLogger)
+	m, err := nameq.NewFeatureMonitor(stateDir, monitorLogger)
 	if err != nil {
 		log.Fatal(err)
 	}

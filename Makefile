@@ -20,7 +20,7 @@ nameq: $(wildcard *.go service/*.go)
 	$(GO) build -o $@
 
 check::
-	$(GO) test -v ./go
+	$(GO) test -v ./service
 
 clean:
 	rm -f nameq
