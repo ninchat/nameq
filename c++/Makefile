@@ -1,10 +1,8 @@
 CXX		:= c++
 AR		:= ar
 
-CPPFLAGS	:= -DNDEBUG -DBOOST_DISABLE_ASSERTS \
-		   -DBOOST_FILESYSTEM_NO_DEPRECATED -DBOOST_SYSTEM_NO_DEPRECATED # <- testing
-CFLAGS		:= -g -Wall -Wextra -O2 -fvisibility=hidden \
-		   -pedantic -std=c++98 # <- testing
+CPPFLAGS	:= -DNDEBUG -DBOOST_DISABLE_ASSERTS
+CFLAGS		:= -g -Wall -Wextra -O2 -fvisibility=hidden
 LDFLAGS		:=
 LIBS		:= -lboost_filesystem -lboost_system
 
