@@ -23,7 +23,7 @@ nameq.o: nameq.cpp nameq.hpp
 nameq.os: nameq.cpp nameq.hpp
 	$(CXX) $(CPPFLAGS) -DPIC $(CFLAGS) -fPIC -c -o $@ nameq.cpp
 
-test:: nameq_test
+test: nameq_test
 	./nameq_test
 
 nameq_test: nameq_test.cpp nameq.hpp nameq.a
@@ -32,4 +32,4 @@ nameq_test: nameq_test.cpp nameq.hpp nameq.a
 clean:
 	rm -f nameq.a nameq.pic.a nameq.so nameq.o nameq.os nameq_test
 
-.PHONY: build clean
+.PHONY: build test clean
