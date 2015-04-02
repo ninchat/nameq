@@ -70,7 +70,7 @@ in real time.
 
 - The top-level and [service](service) directories contain Go sources for the
   nameq program.
-- The [c++](c++) directory contains a library for C++ applications.
+- The [cpp](cpp) directory contains a library for C++ applications.
 - The [go](go) directory contains a library for Go applications.
 - The [python](python) directory contains a library for Python applications.
 

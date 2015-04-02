@@ -1,8 +1,8 @@
-/c++/*.a
-/c++/*.o
-/c++/*.os
-/c++/*.so
-/c++/nameq_test
+/cpp/*.a
+/cpp/*.o
+/cpp/*.os
+/cpp/*.so
+/cpp/nameq_test
 /nameq
 /pkg/
 /python/build/
