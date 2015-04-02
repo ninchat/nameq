@@ -3,7 +3,8 @@ export GOPATH	:= $(PWD)
 
 nameq: $(wildcard cmd/*.go service/*.go)
 	$(GO) get github.com/aarzilli/sandblast
-	$(GO) get github.com/awslabs/aws-sdk-go/gen
+	$(GO) get github.com/awslabs/aws-sdk-go/aws
+	$(GO) get github.com/awslabs/aws-sdk-go/service/s3
 	$(GO) get github.com/miekg/dns
 	$(GO) get github.com/vaughan0/go-ini
 	$(GO) get golang.org/x/exp/inotify

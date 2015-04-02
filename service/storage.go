@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/awslabs/aws-sdk-go/aws"
-	"github.com/awslabs/aws-sdk-go/gen/s3"
+	"github.com/awslabs/aws-sdk-go/service/s3"
 )
 
 const (
@@ -51,7 +51,10 @@ func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{},
 	var client *s3.S3
 
 	if !dryRun {
-		client = s3.New(creds, region, nil)
+		client = s3.New(&aws.Config{
+			Credentials: creds,
+			Region:      region,
+		})
 	}
 
 	if err = updateStorage(local, client, bucket, localKey, log); err != nil {
@@ -114,8 +117,8 @@ func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDP
 		return
 	}
 
-	var loadKeys []aws.StringValue
-	var deleteKeys []aws.StringValue
+	var loadKeys []*string
+	var deleteKeys []*string
 
 	expireThreshold := time.Now().Add(-expireTimeout)
 
@@ -134,7 +137,7 @@ func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDP
 		}
 
 		if object.LastModified.After(expireThreshold) {
-			if remotes.updatable(ipAddr, object.LastModified) {
+			if remotes.updatable(ipAddr, *object.LastModified) {
 				loadKeys = append(loadKeys, object.Key)
 			}
 		} else {
@@ -210,7 +213,7 @@ func parseCredentials(data []byte) (creds aws.CredentialsProvider, err error) {
 func putObject(client *s3.S3, bucket string, key string, body []byte, contentType string) (err error) {
 	contentLength := int64(len(body))
 
-	request := &s3.PutObjectRequest{
+	request := &s3.PutObjectInput{
 		Body:          bytesReadCloser{bytes.NewReader(body)},
 		Bucket:        &bucket,
 		ContentLength: &contentLength,
@@ -228,8 +231,8 @@ func putObject(client *s3.S3, bucket string, key string, body []byte, contentTyp
 	return
 }
 
-func getObject(client *s3.S3, bucket string, key aws.StringValue) (output *s3.GetObjectOutput, err error) {
-	request := &s3.GetObjectRequest{
+func getObject(client *s3.S3, bucket string, key *string) (output *s3.GetObjectOutput, err error) {
+	request := &s3.GetObjectInput{
 		Bucket: &bucket,
 		Key:    key,
 	}
@@ -237,8 +240,8 @@ func getObject(client *s3.S3, bucket string, key aws.StringValue) (output *s3.Ge
 	return client.GetObject(request)
 }
 
-func deleteObject(client *s3.S3, bucket string, key aws.StringValue) (err error) {
-	request := &s3.DeleteObjectRequest{
+func deleteObject(client *s3.S3, bucket string, key *string) (err error) {
+	request := &s3.DeleteObjectInput{
 		Bucket: &bucket,
 		Key:    key,
 	}
@@ -248,7 +251,7 @@ func deleteObject(client *s3.S3, bucket string, key aws.StringValue) (err error)
 }
 
 func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *s3.Object) {
-	request := &s3.ListObjectsRequest{
+	request := &s3.ListObjectsInput{
 		Bucket: &bucket,
 		Prefix: &prefix,
 	}
@@ -271,7 +274,7 @@ func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *
 
 		for {
 			for i := range output.Contents {
-				object := &output.Contents[i]
+				object := output.Contents[i]
 				channel <- object
 				request.Marker = object.Key
 			}
