@@ -9,7 +9,7 @@ import (
 	"log/syslog"
 	"os"
 
-	"./service"
+	"../service"
 )
 
 // Default values for more service.Params.

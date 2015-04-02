@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	nameq "./go"
+	nameq "../go"
 )
 
 var (

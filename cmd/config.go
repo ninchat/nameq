@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	nameq "./go"
+	nameq "../go"
 )
 
 func name(_, command string) error {

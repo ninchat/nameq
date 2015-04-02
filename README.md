@@ -68,7 +68,7 @@ in real time.
 
 ## Source repository contents
 
-- The top-level and [service](service) directories contain Go sources for the
+- The [cmd](cmd) and [service](service) directories contain Go sources for the
   nameq program.
 - The [cpp](cpp) directory contains a library for C++ applications.
 - The [go](go) directory contains a library for Go applications.
