@@ -87,6 +87,7 @@ See the library directories for C++ and Python dependencies.
 
 ## Building
 
+	$ git submodule init
 	$ make
 
 

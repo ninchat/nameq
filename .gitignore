@@ -6,4 +6,9 @@
 /nameq
 /pkg/
 /python/build/
-/src/
+/src/github.com/aarzilli/sandblast/
+/src/github.com/miekg/dns/
+/src/github.com/vaughan0/go-ini/
+/src/golang.org/x/exp/
+/src/golang.org/x/net/
+/src/golang.org/x/text/

@@ -1,0 +1,3 @@
+[submodule "src/github.com/awslabs/aws-sdk-go"]
+	path = src/github.com/awslabs/aws-sdk-go
+	url = https://github.com/awslabs/aws-sdk-go.git
