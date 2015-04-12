@@ -1,4 +1,4 @@
-package service
+package test
 
 import (
 	"encoding/json"
@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	nameq "../go"
+	nameq ".."
+	service "../../service"
 )
 
 var (
@@ -36,22 +37,22 @@ func Test(t *testing.T) {
 	os.MkdirAll(featureDir, 0700)
 	os.MkdirAll(stateDir, 0700)
 
-	localAddr := GuessAddr()
+	localAddr := service.GuessAddr()
 	if localAddr == "" {
 		localAddr = "127.0.0.1"
 	}
 
-	go Serve(&Params{
+	go service.Serve(&service.Params{
 		Addr:       localAddr,
 		NameDir:    nameDir,
 		Features:   "{ \"feature-1\": true, \"feature-2\": [1, 2, 3] }",
 		FeatureDir: featureDir,
 		StateDir:   stateDir,
-		SendMode: &PacketMode{
+		SendMode: &service.PacketMode{
 			Secret: []byte("swordfish"),
 		},
 		S3DryRun: true,
-		Log: Log{
+		Log: service.Log{
 			ErrorLogger: serviceErrorLogger,
 			InfoLogger:  serviceInfoLogger,
 			DebugLogger: serviceDebugLogger,
