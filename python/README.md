@@ -2,6 +2,7 @@
 
 - [Python](https://www.python.org) 2.7 or 3.x
 - [github.com/tsavola/pyinotify-basic](https://github.com/tsavola/pyinotify-basic)
+- [github.com/boto/boto](https://github.com/boto/boto) for the `nameq.dump` utility
 
 
 ## Usage
