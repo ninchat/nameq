@@ -19,6 +19,9 @@ def dump_hosts(s3bucket, s3prefix, filter_features=None, single=False):
 	error = None
 
 	for key in boto.connect_s3().get_bucket(s3bucket).list(s3prefix):
+		if key.name == s3prefix:
+			continue
+
 		data = key.get_contents_as_string()
 		try:
 			entry_features = set(json.loads(data).get("features", ()))
