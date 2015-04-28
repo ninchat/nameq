@@ -196,10 +196,10 @@ func findFeatures(prog, command string) (err error) {
 	entries := accumulator.array()
 
 	if single {
-		println(entries[len(entries)-1])
+		fmt.Println(entries[len(entries)-1])
 	} else {
 		for _, host := range entries {
-			println(host)
+			fmt.Println(host)
 		}
 	}
 
