@@ -29,7 +29,6 @@ def dump_hosts(s3bucket, s3prefix, filter_features=None, single=False):
 			log.error("%s: %s", key.name, e)
 			error = e
 		else:
-			log.info("%s", key.name)
 			if not filter_features or filter_features & entry_features:
 				entries.append(key.name[len(s3prefix):])
 
