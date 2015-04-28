@@ -35,7 +35,7 @@ def main():
 			print("{}: {}".format(key.name, e), file=sys.stderr)
 			error = e
 		else:
-			if not filter_features or filter_features | entry_features:
+			if not filter_features or filter_features & entry_features:
 				entries.append(key.name[len(prefix):])
 
 	if entries:
