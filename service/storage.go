@@ -112,8 +112,8 @@ func updateStorage(local *localNode, client *s3.S3, bucket, key string, log *Log
 func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix string, log *Log) (err error) {
 	log.Debug("scanning S3")
 
-	objects := listObjects(client, bucket, prefix, log)
-	if objects == nil {
+	objects, err := listObjects(client, bucket, prefix, log)
+	if err != nil {
 		return
 	}
 
@@ -250,7 +250,7 @@ func deleteObject(client *s3.S3, bucket string, key *string) (err error) {
 	return
 }
 
-func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *s3.Object) {
+func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *s3.Object, err error) {
 	request := &s3.ListObjectsInput{
 		Bucket: &bucket,
 		Prefix: &prefix,
@@ -265,7 +265,8 @@ func listObjects(client *s3.S3, bucket, prefix string, log *Log) (channel chan *
 
 	output, err := client.ListObjects(request)
 	if err != nil {
-		log.Errorf("S3 ListObjects: %s", err)
+		err = fmt.Errorf("S3 ListObjects: %s", err)
+		close(channel)
 		return
 	}
 
