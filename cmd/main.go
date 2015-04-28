@@ -25,6 +25,9 @@ func main() {
 		case "monitor-features":
 			exit(command, monitorFeatures(prog, command))
 
+		case "find-features":
+			exit(command, findFeatures(prog, command))
+
 		case "serve":
 			exit(command, serve(prog, command))
 		}
@@ -33,6 +36,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Usage: %s name [OPTIONS] NAME\n", prog)
 	fmt.Fprintf(os.Stderr, "       %s feature [OPTIONS] NAME [VALUE]\n", prog)
 	fmt.Fprintf(os.Stderr, "       %s monitor-features [OPTIONS]\n", prog)
+	fmt.Fprintf(os.Stderr, "       %s find-features [OPTIONS] NAME...\n", prog)
 	fmt.Fprintf(os.Stderr, "       %s serve [OPTIONS]\n", prog)
 	os.Exit(2)
 }
