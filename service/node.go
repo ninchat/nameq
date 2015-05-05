@@ -157,6 +157,16 @@ func (local *localNode) updateFeatures(newFeatures map[string]*json.RawMessage) 
 	return
 }
 
+func (local *localNode) empty() (empty *localNode) {
+	empty = &localNode{
+		ipAddr: local.ipAddr,
+		conn:   local.conn,
+		mode:   local.mode,
+	}
+	empty.setNode(new(Node))
+	return
+}
+
 type remoteNode struct {
 	addr *net.UDPAddr
 	node *Node

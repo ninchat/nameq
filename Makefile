@@ -6,6 +6,7 @@ nameq: $(wildcard cmd/*.go service/*.go)
 	$(GO) get github.com/miekg/dns
 	$(GO) get github.com/vaughan0/go-ini
 	$(GO) get golang.org/x/exp/inotify
+	$(GO) get golang.org/x/net/context
 	$(GO) get golang.org/x/net/html
 
 	$(GO) build github.com/awslabs/aws-sdk-go/aws

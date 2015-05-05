@@ -8,6 +8,10 @@ import (
 	logging "log"
 	"log/syslog"
 	"os"
+	"os/signal"
+	"syscall"
+
+	"golang.org/x/net/context"
 
 	"../service"
 )
@@ -115,7 +119,22 @@ func serve(prog, command string) (err error) {
 		return
 	}
 
-	if err = service.Serve(p); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
+	go func() {
+		for s := range signals {
+			switch s {
+			case syscall.SIGTERM, syscall.SIGINT:
+				cancel()
+				return
+			}
+		}
+	}()
+
+	if err = service.Serve(ctx, p); err != nil {
 		log.Error(err)
 	}
 	return

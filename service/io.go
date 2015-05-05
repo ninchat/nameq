@@ -3,6 +3,8 @@ package service
 import (
 	"net"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 const (
@@ -19,21 +21,17 @@ func randomTransmitInterval() time.Duration {
 	return randomDuration(minTransmitInterval, maxTransmitInterval)
 }
 
-func transmitLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply <-chan []*net.UDPAddr, log *Log) {
+func transmitLoop(ctx context.Context, local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply <-chan []*net.UDPAddr, done chan<- struct{}, log *Log) {
+	defer func() {
+		transmit(local.empty(), remotes.addrs(), log)
+		close(done)
+	}()
+
 	var replyTo []*net.UDPAddr
 
 	timer := time.NewTimer(randomTransmitInterval())
 
 	for {
-		data, err := marshalPacket(local)
-		if err != nil {
-			panic(err)
-		}
-
-		if len(data) > safeDatagramSize {
-			log.Errorf("sending dangerously large packet: %d bytes", len(data))
-		}
-
 		addrs := replyTo
 		replyTo = nil
 
@@ -41,13 +39,7 @@ func transmitLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}
 			addrs = remotes.addrs()
 		}
 
-		for _, i := range random.Perm(len(addrs)) {
-			log.Debugf("sending to %s", addrs[i].IP)
-
-			if _, err := local.conn.WriteToUDP(data, addrs[i]); err != nil {
-				log.Error(err)
-			}
-		}
+		transmit(local, addrs, log)
 
 		select {
 		case addrs := <-reply:
@@ -71,6 +63,29 @@ func transmitLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}
 
 		case <-timer.C:
 			timer.Reset(randomTransmitInterval())
+
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		}
+	}
+}
+
+func transmit(local *localNode, addrs []*net.UDPAddr, log *Log) {
+	data, err := marshalPacket(local)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(data) > safeDatagramSize {
+		log.Errorf("sending dangerously large packet: %d bytes", len(data))
+	}
+
+	for _, i := range random.Perm(len(addrs)) {
+		log.Debugf("sending to %s", addrs[i].IP)
+
+		if _, err := local.conn.WriteToUDP(data, addrs[i]); err != nil {
+			log.Error(err)
 		}
 	}
 }

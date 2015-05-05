@@ -3,6 +3,8 @@ package service
 import (
 	"net"
 
+	"golang.org/x/net/context"
+
 	nameq "../go"
 )
 
@@ -52,7 +54,7 @@ func GuessAddr() string {
 }
 
 // Serve indefinitely.
-func Serve(p *Params) (err error) {
+func Serve(ctx context.Context, p *Params) (err error) {
 	if p.Port == 0 {
 		p.Port = DefaultPort
 	}
@@ -89,6 +91,8 @@ func Serve(p *Params) (err error) {
 		notifyStorage  = make(chan struct{}, 1)
 		notifyTransmit = make(chan struct{}, 1)
 		reply          = make(chan []*net.UDPAddr, 10)
+		doneStorage    = make(chan struct{})
+		doneTransmit   = make(chan struct{})
 	)
 
 	if err = initNameConfig(local, p.Names, p.NameDir, notify, log); err != nil {
@@ -108,9 +112,9 @@ func Serve(p *Params) (err error) {
 	}
 
 	go receiveLoop(local, remotes, p.ReceiveModes, notifyState, reply, log)
-	go transmitLoop(local, remotes, notifyTransmit, reply, log)
+	go transmitLoop(ctx, local, remotes, notifyTransmit, reply, doneTransmit, log)
 
-	if err = initStorage(local, remotes, notifyStorage, reply, p.S3Creds, p.S3Region, p.S3Bucket, p.S3Prefix, p.S3DryRun, log); err != nil {
+	if err = initStorage(ctx, local, remotes, notifyStorage, reply, doneStorage, p.S3Creds, p.S3Region, p.S3Bucket, p.S3Prefix, p.S3DryRun, log); err != nil {
 		return
 	}
 
@@ -120,7 +124,7 @@ func Serve(p *Params) (err error) {
 		forwardTransmit chan<- struct{}
 	)
 
-	for {
+	for doneStorage != nil || doneTransmit != nil {
 		select {
 		case <-notify:
 			forwardState = notifyState
@@ -135,6 +139,14 @@ func Serve(p *Params) (err error) {
 
 		case forwardTransmit <- struct{}{}:
 			forwardTransmit = nil
+
+		case <-doneStorage:
+			doneStorage = nil
+
+		case <-doneTransmit:
+			doneTransmit = nil
 		}
 	}
+
+	return
 }

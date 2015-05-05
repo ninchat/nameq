@@ -11,6 +11,7 @@ import (
 
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/service/s3"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -36,7 +37,7 @@ func randomStorageInterval() time.Duration {
 	return randomDuration(minStorageInterval, maxStorageInterval)
 }
 
-func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, credData []byte, region, bucket, prefix string, dryRun bool, log *Log) (err error) {
+func initStorage(ctx context.Context, local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, done chan<- struct{}, credData []byte, region, bucket, prefix string, dryRun bool, log *Log) (err error) {
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
@@ -65,12 +66,17 @@ func initStorage(local *localNode, remotes *remoteNodes, notify <-chan struct{},
 		return
 	}
 
-	go storageLoop(local, remotes, notify, reply, client, bucket, prefix, localKey, log)
+	go storageLoop(ctx, local, remotes, notify, reply, done, client, bucket, prefix, localKey, log)
 
 	return
 }
 
-func storageLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, client *s3.S3, bucket, prefix, localKey string, log *Log) {
+func storageLoop(ctx context.Context, local *localNode, remotes *remoteNodes, notify <-chan struct{}, reply chan<- []*net.UDPAddr, done chan<- struct{}, client *s3.S3, bucket, prefix, localKey string, log *Log) {
+	defer func() {
+		updateStorage(local.empty(), client, bucket, localKey, log)
+		close(done)
+	}()
+
 	timer := time.NewTimer(randomStorageInterval())
 
 	for {
@@ -83,6 +89,10 @@ func storageLoop(local *localNode, remotes *remoteNodes, notify <-chan struct{},
 		case <-timer.C:
 			timer.Reset(randomStorageInterval())
 			scan = true
+
+		case <-ctx.Done():
+			timer.Stop()
+			return
 		}
 
 		if err := updateStorage(local, client, bucket, localKey, log); err != nil {

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	nameq ".."
 	service "../../service"
 )
@@ -42,22 +44,29 @@ func Test(t *testing.T) {
 		localAddr = "127.0.0.1"
 	}
 
-	go service.Serve(&service.Params{
-		Addr:       localAddr,
-		NameDir:    nameDir,
-		Features:   "{ \"feature-1\": true, \"feature-2\": [1, 2, 3] }",
-		FeatureDir: featureDir,
-		StateDir:   stateDir,
-		SendMode: &service.PacketMode{
-			Secret: []byte("swordfish"),
-		},
-		S3DryRun: true,
-		Log: service.Log{
-			ErrorLogger: serviceErrorLogger,
-			InfoLogger:  serviceInfoLogger,
-			DebugLogger: serviceDebugLogger,
-		},
-	})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+
+		service.Serve(ctx, &service.Params{
+			Addr:       localAddr,
+			NameDir:    nameDir,
+			Features:   "{ \"feature-1\": true, \"feature-2\": [1, 2, 3] }",
+			FeatureDir: featureDir,
+			StateDir:   stateDir,
+			SendMode: &service.PacketMode{
+				Secret: []byte("swordfish"),
+			},
+			S3DryRun: true,
+			Log: service.Log{
+				ErrorLogger: serviceErrorLogger,
+				InfoLogger:  serviceInfoLogger,
+				DebugLogger: serviceDebugLogger,
+			},
+		})
+	}()
 
 	m, err := nameq.NewFeatureMonitor(stateDir, monitorLogger)
 	if err != nil {
@@ -78,4 +87,7 @@ func Test(t *testing.T) {
 
 		t.Logf("feature: name=%s host=%s value=%s", f.Name, f.Host, value)
 	}
+
+	cancel()
+	<-done
 }
