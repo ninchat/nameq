@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/awslabs/aws-sdk-go/aws"
+	"github.com/awslabs/aws-sdk-go/aws/credentials"
 	"github.com/awslabs/aws-sdk-go/service/s3"
 	"golang.org/x/net/context"
 )
@@ -201,7 +202,7 @@ func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDP
 	return
 }
 
-func parseCredentials(data []byte) (creds aws.CredentialsProvider, err error) {
+func parseCredentials(data []byte) (creds *credentials.Credentials, err error) {
 	var accessKey string
 	var secretKey string
 
@@ -216,7 +217,7 @@ func parseCredentials(data []byte) (creds aws.CredentialsProvider, err error) {
 		secretKey = fields[1]
 	}
 
-	creds = aws.DetectCreds(accessKey, secretKey, "")
+	creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
 	return
 }
 
