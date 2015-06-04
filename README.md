@@ -78,7 +78,7 @@ in real time.
 ## Dependencies
 
 - [Go](https://golang.org)
-- [github.com/awslabs/aws-sdk-go](https://github.com/awslabs/aws-sdk-go)
+- [github.com/aws/aws-sdk-go](https://github.com/aws/aws-sdk-go)
 - [github.com/miekg/dns](https://github.com/miekg/dns)
 - [golang.org/x/exp/inotify](https://golang.org/x/exp/inotify)
 

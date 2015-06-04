@@ -9,9 +9,6 @@ nameq: $(wildcard cmd/*.go service/*.go)
 	$(GO) get golang.org/x/net/context
 	$(GO) get golang.org/x/net/html
 
-	$(GO) build github.com/awslabs/aws-sdk-go/aws
-	$(GO) build github.com/awslabs/aws-sdk-go/service/s3
-
 	$(GO) fmt cmd/*.go
 	$(GO) fmt service/*.go
 	$(GO) fmt go/*.go
