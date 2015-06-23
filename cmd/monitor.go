@@ -154,7 +154,15 @@ func findFeatures(prog, command string) (err error) {
 	for {
 		var f *nameq.Feature
 
-		if accumulator.empty() {
+		if monitor.Boot != nil {
+			select {
+			case f = <-monitor.C:
+
+			case <-monitor.Boot:
+				monitor.Boot = nil
+				continue
+			}
+		} else if accumulator.empty() {
 			select {
 			case f = <-monitor.C:
 

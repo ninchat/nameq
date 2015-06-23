@@ -112,6 +112,10 @@ type FeatureMonitor struct {
 	// may be seemingly redundant entries when a feature is updated rapidly.
 	C <-chan *Feature
 
+	// Boot is closed after all existing features have been delivered via C.
+	// Client code is free to set this member to nil after it has been closed.
+	Boot <-chan struct{}
+
 	logger  *log.Logger
 	closed  chan struct{}
 	watcher *inotify.Watcher
@@ -154,9 +158,11 @@ func NewFeatureMonitor(stateDir string, logger *log.Logger) (m *FeatureMonitor, 
 	}
 
 	c := make(chan *Feature)
+	boot := make(chan struct{})
 
 	m = &FeatureMonitor{
 		C:       c,
+		Boot:    boot,
 		logger:  logger,
 		closed:  make(chan struct{}, 1),
 		watcher: watcher,
@@ -170,7 +176,9 @@ func NewFeatureMonitor(stateDir string, logger *log.Logger) (m *FeatureMonitor, 
 		m.log(err)
 	}
 
-	go m.watchLoop(c, featureDir)
+	m.queued = append(m.queued, nil) // indicates end of boot
+
+	go m.watchLoop(c, boot, featureDir)
 
 	return
 }
@@ -183,7 +191,7 @@ func (m *FeatureMonitor) Close() {
 	}
 }
 
-func (m *FeatureMonitor) watchLoop(c chan<- *Feature, featureDir string) {
+func (m *FeatureMonitor) watchLoop(c chan<- *Feature, boot chan<- struct{}, featureDir string) {
 	defer m.watcher.Close()
 	defer close(c)
 
@@ -195,6 +203,12 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, featureDir string) {
 		if len(m.queued) > 0 {
 			outstanding = m.queued[0]
 			input = nil
+
+			if outstanding == nil { // end of boot indicator
+				close(boot)
+				m.queued = m.queued[1:]
+				continue
+			}
 		} else {
 			output = nil
 		}
