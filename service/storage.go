@@ -203,9 +203,6 @@ func scanStorage(local *localNode, remotes *remoteNodes, reply chan<- []*net.UDP
 }
 
 func parseCredentials(data []byte) (creds *credentials.Credentials, err error) {
-	var accessKey string
-	var secretKey string
-
 	if data != nil {
 		fields := strings.Fields(strings.TrimSpace(string(data)))
 		if len(fields) != 2 {
@@ -213,11 +210,12 @@ func parseCredentials(data []byte) (creds *credentials.Credentials, err error) {
 			return
 		}
 
-		accessKey = fields[0]
-		secretKey = fields[1]
+		accessKey := fields[0]
+		secretKey := fields[1]
+
+		creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
 	}
 
-	creds = credentials.NewStaticCredentials(accessKey, secretKey, "")
 	return
 }
 
