@@ -1,4 +1,4 @@
-package test
+package nameq_test
 
 import (
 	"encoding/json"
@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	nameq ".."
-	service "../../service"
+	nameq "."
+	service "../service"
 )
 
 var (
