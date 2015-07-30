@@ -31,13 +31,13 @@ package nameq
 //
 type FeatureDemux map[string][]chan<- *Feature
 
-// Add adds a subscriber.  The supplied channel should be buffered.
+// Add a subscriber.  The supplied channel should be buffered.
 func (queues FeatureDemux) Add(name string, output chan<- *Feature) {
 	queues[name] = append(queues[name], output)
 }
 
-// AddBuffered adds a subscriber with unbounded buffering.  The supplied
-// channel doesn't need to be buffered.
+// AddBuffer adds a subscriber with unbounded buffering.  The supplied channel
+// doesn't need to be buffered.
 func (queues FeatureDemux) AddBuffer(name string, output chan<- *Feature) {
 	queues[name] = append(queues[name], FeatureBuffer(output))
 }
