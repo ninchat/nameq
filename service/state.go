@@ -40,7 +40,9 @@ func stateLoop(local *localNode, remotes *remoteNodes, featureDir, tmpDir string
 		}
 
 		err := filepath.Walk(featureDir, func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() {
+			if err != nil {
+				log.Errorf("%s: %s", path, err)
+			} else if !info.IsDir() {
 				if _, found := filenames[path]; !found {
 					log.Debugf("removing file %s", path)
 					os.Remove(path)
