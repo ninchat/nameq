@@ -106,6 +106,11 @@ type Feature struct {
 	Data []byte // JSON value if feature added or updated, or nil if removed.
 }
 
+// String returns the feature name.
+func (f *Feature) String() string {
+	return f.Name
+}
+
 // FeatureMonitor watches the nameq runtime state for changes.
 type FeatureMonitor struct {
 	// Produces current information, followed by updates in real time.  There
