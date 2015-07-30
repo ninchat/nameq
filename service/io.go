@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math/rand"
 	"net"
 	"time"
 
@@ -81,7 +82,7 @@ func transmit(local *localNode, addrs []*net.UDPAddr, log *Log) {
 		log.Errorf("sending dangerously large packet: %d bytes", len(data))
 	}
 
-	for _, i := range random.Perm(len(addrs)) {
+	for _, i := range rand.Perm(len(addrs)) {
 		log.Debugf("sending to %s", addrs[i].IP)
 
 		if _, err := local.conn.WriteToUDP(data, addrs[i]); err != nil {
