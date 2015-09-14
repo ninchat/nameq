@@ -106,6 +106,8 @@ class _FeatureMonitor(object):
 			self._add_host(event.wd, event.name)
 
 	def _add_feature(self, name):
+		log.debug("adding feature %s", name)
+
 		path = os.path.join(self._featuredir, name)
 		wd = None
 
@@ -120,6 +122,8 @@ class _FeatureMonitor(object):
 		return wd
 
 	def _remove_feature(self, name):
+		log.debug("removing feature %s", name)
+
 		wd = self._featurename_wds[name]
 		del self._wd_featurepaths[wd]
 		del self._featurename_wds[name]
@@ -127,9 +131,12 @@ class _FeatureMonitor(object):
 	def _add_host(self, wd, name):
 		path = os.path.join(self._wd_featurepaths[wd], name)
 
+		log.debug("adding host %s", path)
+
 		try:
 			f = open(path)
 		except Exception:
+			log.debug("opening %s", path, exc_info=True)
 			return
 
 		try:
@@ -144,12 +151,17 @@ class _FeatureMonitor(object):
 	def _remove_host(self, wd, name):
 		path = os.path.join(self._wd_featurepaths[wd], name)
 
+		log.debug("removing host %s", path)
+
 		if os.access(path, os.F_OK):
+			log.debug("%s exists, not removing", path)
 			return
 
 		self._enqueue_feature(path)
 
 	def _enqueue_feature(self, path, data=None):
+		log.debug("enqueuing %s update", path)
+
 		value = None
 
 		if data is not None:
