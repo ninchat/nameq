@@ -7,6 +7,10 @@ __all__ = [
 	"Feature",
 	"FeatureMonitor",
 	"log",
+	"remove_feature",
+	"remove_name",
+	"set_feature",
+	"set_name",
 ]
 
 import errno
@@ -15,13 +19,62 @@ import json
 import logging
 import os
 import select
+import tempfile
 import threading
 
 import inotify
 
+DEFAULT_NAMEDIR = "/etc/nameq/names"
+DEFAULT_FEATUREDIR = "/etc/nameq/features"
 DEFAULT_STATEDIR = "/run/nameq/state"
 
 log = logging.getLogger("nameq")
+
+def set_name(name, namedir=DEFAULT_NAMEDIR):
+	_create_config_file(namedir, name)
+
+def remove_name(name, namedir=DEFAULT_NAMEDIR):
+	_remove_config_file(namedir, name)
+
+def set_feature(name, value, featuredir=DEFAULT_FEATUREDIR):
+	_create_config_file(featuredir, name, json.dumps(value))
+
+def remove_feature(name, featuredir=DEFAULT_FEATUREDIR):
+	_remove_config_file(featuredir, name)
+
+def _create_config_file(dirpath, name, data=""):
+	try:
+		os.makedirs(dirpath, 0o755)
+	except OSError:
+		pass
+
+	tmpdirpath = os.path.join(dirpath, ".tmp")
+
+	try:
+		os.mkdir(tmpdirpath, 0o700)
+	except OSError:
+		pass
+
+	with tempfile.NamedTemporaryFile(mode="w", dir=tmpdirpath) as f:
+		f.write(data)
+		f.flush()
+		tmppath = f.name
+		f.delete = False
+
+	ok = False
+	try:
+		os.rename(tmppath, os.path.join(dirpath, name))
+		ok = True
+	finally:
+		if not ok:
+			os.remove(tmppath)
+
+def _remove_config_file(dirpath, name):
+	try:
+		os.remove(os.path.join(dirpath, name))
+	except OSError as e:
+		if e.errno != errno.ENOENT:
+			raise
 
 class Feature(object):
 	"""Represents a momentary state of a feature on a host.
