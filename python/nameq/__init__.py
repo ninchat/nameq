@@ -122,16 +122,7 @@ class _FeatureMonitor(object):
 			log.exception("listing %s", self._featuredir)
 		else:
 			for featurename in featurenames:
-				featurepath = os.path.join(self._featuredir, featurename)
-				wd = self._add_feature(featurepath)
-				if wd is not None:
-					try:
-						hostnames = os.listdir(featurepath)
-					except Exception as e:
-						log.exception("listing %s", featurepath)
-					else:
-						for hostname in hostnames:
-							self._add_host(wd, hostname)
+				self._add_feature(featurename)
 
 	def __enter__(self):
 		return self
@@ -162,17 +153,24 @@ class _FeatureMonitor(object):
 		log.debug("adding feature %s", name)
 
 		path = os.path.join(self._featuredir, name)
-		wd = None
 
 		try:
 			wd = inotify.add_watch(self._fd, path, inotify.ONLYDIR|inotify.DELETE|inotify.MOVED_TO)
 		except Exception:
 			log.exception("adding watch for %s", path)
-		else:
-			self._wd_featurepaths[wd] = path
-			self._featurename_wds[name] = wd
+			return
 
-		return wd
+		self._wd_featurepaths[wd] = path
+		self._featurename_wds[name] = wd
+
+		try:
+			hostnames = os.listdir(path)
+		except Exception:
+			log.exception("listing %s", path)
+			return
+
+		for hostname in hostnames:
+			self._add_host(wd, hostname)
 
 	def _remove_feature(self, name):
 		log.debug("removing feature %s", name)
