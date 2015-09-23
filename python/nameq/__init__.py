@@ -234,16 +234,22 @@ class FeatureMonitor(_FeatureMonitor):
 	"""Watches the nameq runtime state for changes.  Either the 'changed' method
 	   must be implemented in a subclass, or a callable must be provided as the
 	   'changed' parameter.  It will be invoked with a Feature instance, or the
-	   terminator when the monitor is closed.  The state directory must
-	   exist."""
+	   terminator when the monitor is closed.  The 'booted' method/callable
+	   will be invoked without parameters after all pre-existing features have
+	   been delivered.  The state directory must exist.
+
+	"""
 
 	_bufsize = 65536
 
-	def __init__(self, changed=None, terminator=None, statedir=DEFAULT_STATEDIR):
+	def __init__(self, changed=None, terminator=None, statedir=DEFAULT_STATEDIR, booted=None):
 		super(FeatureMonitor, self).__init__(statedir)
 
 		if changed is not None:
 			self.changed = changed
+
+		if booted is not None:
+			self.booted = booted
 
 		self.terminator = terminator
 
@@ -272,6 +278,9 @@ class FeatureMonitor(_FeatureMonitor):
 
 	def changed(self, feature):
 		log.debug("FeatureMonitor.changed method not implemented")
+
+	def booted(self):
+		log.debug("FeatureMonitor.booted method not implemented")
 
 	def _iter(self):
 		while True:
@@ -305,6 +314,12 @@ class FeatureMonitor(_FeatureMonitor):
 	def _loop(self):
 		try:
 			self._deliver()
+
+			try:
+				self.booted()
+			except Exception:
+				log.exception("uncaught exception in FeatureMonitor.booted callback")
+
 			for event in self._iter():
 				self._handle(event)
 				self._deliver()
