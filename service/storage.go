@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"golang.org/x/net/context"
 )
@@ -53,10 +54,10 @@ func initStorage(ctx context.Context, local *localNode, remotes *remoteNodes, no
 	var client *s3.S3
 
 	if !dryRun {
-		client = s3.New(&aws.Config{
+		client = s3.New(session.New(&aws.Config{
 			Credentials: creds,
-			Region:      region,
-		})
+			Region:      &region,
+		}))
 	}
 
 	if err = updateStorage(local, client, bucket, localKey, log); err != nil {
