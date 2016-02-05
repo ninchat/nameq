@@ -78,8 +78,15 @@ func transmit(local *localNode, addrs []*net.UDPAddr, log *Log) {
 		panic(err)
 	}
 
-	if len(data) > safeDatagramSize {
+	switch {
+	case len(data) > safeDatagramSize:
 		log.Errorf("sending dangerously large packet: %d bytes", len(data))
+
+	case len(data) > safeDatagramSize-safeDatagramSize/4:
+		log.Infof("sending large packet: %d bytes", len(data))
+
+	default:
+		log.Debugf("sending packet: %d bytes", len(data))
 	}
 
 	for _, i := range rand.Perm(len(addrs)) {
@@ -101,14 +108,23 @@ func receiveLoop(local *localNode, remotes *remoteNodes, modes map[int]*PacketMo
 			continue
 		}
 
-		log.Debugf("received from %s", originAddr.IP)
+		data := buf[:n]
+
+		switch {
+		case len(data) > safeDatagramSize:
+			log.Errorf("received dangerously large packet from %s: %d bytes", originAddr.IP, len(data))
+
+		case len(data) > safeDatagramSize-safeDatagramSize/4:
+			log.Infof("received large packet from %s: %d bytes", originAddr.IP, len(data))
+
+		default:
+			log.Debugf("received packet from %s: %d bytes", originAddr.IP, len(data))
+		}
 
 		if !originAddr.IP.IsGlobalUnicast() {
 			log.Errorf("bad origin address: %s", originAddr.IP)
 			continue
 		}
-
-		data := buf[:n]
 
 		node, err := unmarshalPacket(data, modes)
 		if err != nil {
