@@ -1,14 +1,16 @@
 package service
 
-import (
-	"log"
-)
+// Logger is a subset of the standard log.Logger.
+type Logger interface {
+	Print(v ...interface{})
+	Printf(format string, v ...interface{})
+}
 
 // Log configures optional loggers.
 type Log struct {
-	ErrorLogger *log.Logger
-	InfoLogger  *log.Logger
-	DebugLogger *log.Logger
+	ErrorLogger Logger
+	InfoLogger  Logger
+	DebugLogger Logger
 }
 
 func (l *Log) Error(args ...interface{}) {
