@@ -4,7 +4,6 @@ MAINTAINER timo@ninchat.com
 
 ENV DEBIAN_FRONTEND noninteractive
 
-VOLUME /etc/nameq/names
 VOLUME /etc/nameq/features
 VOLUME /run/nameq/state
 

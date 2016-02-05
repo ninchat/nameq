@@ -13,35 +13,12 @@ import (
 )
 
 const (
-	// The directory used when an empty string is given to SetName or RemoveName.
-	DefaultNameDir = "/etc/nameq/names"
-
 	// The directory used when an empty string is given to SetFeature or RemoveFeature.
 	DefaultFeatureDir = "/etc/nameq/features"
 
 	// The directory used when an empty string is given to NewFeatureMonitor.
 	DefaultStateDir = "/run/nameq/state"
 )
-
-// SetName adds a local hostname.  DefaultNameDir is used if an empty string is
-// given.  Redundant calls are ok.
-func SetName(nameDir, name string) error {
-	if nameDir == "" {
-		nameDir = DefaultNameDir
-	}
-
-	return createConfigFile(nameDir, name, nil)
-}
-
-// RemoveName removes a local hostname.  DefaultNameDir is used if an empty
-// string is given.  Redundant calls are ok.
-func RemoveName(nameDir, name string) error {
-	if nameDir == "" {
-		nameDir = DefaultNameDir
-	}
-
-	return removeConfigFile(nameDir, name)
-}
 
 // SetFeature adds or updates a local feature.  data must be a valid JSON
 // document.  DefaultFeatureDir is used if an empty string is given.  Redundant

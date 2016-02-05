@@ -16,24 +16,12 @@ import (
 	"../service"
 )
 
-// Default values for more service.Params.
-const (
-	DefaultDNSAddr = "127.0.0.1:53"
-	DefaultDNSTCP  = true
-	DefaultDNSUDP  = true
-)
-
 func serve(prog, command string) (err error) {
 	p := &service.Params{
 		Addr:       service.GuessAddr(),
 		Port:       service.DefaultPort,
-		NameDir:    service.DefaultNameDir,
 		FeatureDir: service.DefaultFeatureDir,
 		StateDir:   service.DefaultStateDir,
-		DNSAddr:    DefaultDNSAddr,
-		DNSTCP:     DefaultDNSTCP,
-		DNSUDP:     DefaultDNSUDP,
-		ResolvConf: service.DefaultResolvConf,
 	}
 
 	var (
@@ -60,15 +48,9 @@ func serve(prog, command string) (err error) {
 
 	flag.StringVar(&p.Addr, "addr", p.Addr, "local IP address for peer-to-peer messaging")
 	flag.IntVar(&p.Port, "port", p.Port, "UDP port for peer-to-peer messaging")
-	flag.StringVar(&p.Names, "names", p.Names, "hostnames (space-delimited list)")
-	flag.StringVar(&p.NameDir, "namedir", p.NameDir, "dynamic hostname configuration location")
 	flag.StringVar(&p.Features, "features", p.Features, "features (JSON)")
 	flag.StringVar(&p.FeatureDir, "featuredir", p.FeatureDir, "dynamic feature configuration location")
 	flag.StringVar(&p.StateDir, "statedir", p.StateDir, "runtime state root location")
-	flag.StringVar(&p.DNSAddr, "dnsaddr", p.DNSAddr, "DNS server listening address")
-	flag.BoolVar(&p.DNSTCP, "dnstcp", p.DNSTCP, "serve DNS clients via TCP?")
-	flag.BoolVar(&p.DNSUDP, "dnsudp", p.DNSUDP, "serve DNS clients via UDP?")
-	flag.StringVar(&p.ResolvConf, "resolvconf", p.ResolvConf, "upstream DNS servers")
 	flag.StringVar(&secretFile, "secretfile", secretFile, "path for reading peer-to-peer messaging key")
 	flag.IntVar(&secretFd, "secretfd", secretFd, "file descriptor for reading peer-to-peer messaging key")
 	flag.StringVar(&s3CredFile, "s3credfile", s3CredFile, "path for reading AWS credentials")

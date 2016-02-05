@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,7 +17,6 @@ import (
 type Node struct {
 	IPAddr   string                      `json:"ip_addr,omitempty"`
 	TimeNs   int64                       `json:"time_ns,omitempty"`
-	Names    []string                    `json:"names,omitempty"`
 	Features map[string]*json.RawMessage `json:"features,omitempty"`
 }
 
@@ -69,7 +67,6 @@ func (local *localNode) encodeForPacket(w io.Writer) error {
 	return json.NewEncoder(w).Encode(&Node{
 		IPAddr:   local.ipAddr,
 		TimeNs:   time.Now().UnixNano(),
-		Names:    node.Names,
 		Features: node.Features,
 	})
 }
@@ -78,49 +75,11 @@ func (local *localNode) marshalForStorage() (data []byte, err error) {
 	node := local.getNode()
 
 	data, err = json.MarshalIndent(&Node{
-		Names:    node.Names,
 		Features: node.Features,
 	}, "", "\t")
 
 	if err == nil {
 		data = append(data, byte('\n'))
-	}
-
-	return
-}
-
-func (local *localNode) hasName(name string) (found bool) {
-	for _, localName := range local.getNode().Names {
-		if name == localName {
-			found = true
-			break
-		}
-	}
-
-	return
-}
-
-func (local *localNode) updateNames(newNames []string) (update bool) {
-	oldNode := local.getNode()
-
-	sort.Strings(newNames)
-
-	if len(oldNode.Names) != len(newNames) {
-		update = true
-	} else {
-		for i := 0; i < len(newNames); i++ {
-			if oldNode.Names[i] != newNames[i] {
-				update = true
-				break
-			}
-		}
-	}
-
-	if update {
-		local.setNode(&Node{
-			Names:    newNames,
-			Features: oldNode.Features,
-		})
 	}
 
 	return
@@ -149,7 +108,6 @@ func (local *localNode) updateFeatures(newFeatures map[string]*json.RawMessage) 
 
 	if update {
 		local.setNode(&Node{
-			Names:    oldNode.Names,
 			Features: newFeatures,
 		})
 	}
@@ -180,14 +138,12 @@ type remoteNodes struct {
 	port    int
 	lock    sync.RWMutex
 	ipAddrs map[string]*remoteNode
-	names   map[string][]*remoteNode
 }
 
 func newRemoteNodes(port int) *remoteNodes {
 	return &remoteNodes{
 		port:    port,
 		ipAddrs: make(map[string]*remoteNode),
-		names:   make(map[string][]*remoteNode),
 	}
 }
 
@@ -205,110 +161,20 @@ func (remotes *remoteNodes) update(newNode *Node, local *localNode, log *Log) (n
 	remotes.lock.Lock()
 	defer remotes.lock.Unlock()
 
-	var oldNames []string
-
-	remote := remotes.ipAddrs[newNode.IPAddr]
-	if remote != nil {
-		if remote.node.TimeNs > newNode.TimeNs {
-			return
+	if remote := remotes.ipAddrs[newNode.IPAddr]; remote != nil {
+		if newNode.TimeNs > remote.node.TimeNs {
+			remote.node = newNode
 		}
-
-		oldNames = remote.node.Names
-	}
-
-	sort.Strings(newNode.Names)
-
-	oldHas := make(map[string]struct{})
-	newHas := make(map[string]struct{})
-
-	for _, name := range oldNames {
-		oldHas[name] = struct{}{}
-	}
-
-	for _, name := range newNode.Names {
-		newHas[name] = struct{}{}
-	}
-
-	for _, name := range oldNames {
-		_, reclaim := newHas[name]
-		remotes.disclaimName(name, remote, local, reclaim, log)
-	}
-
-	if remote == nil {
+	} else {
 		newAddr, _ = resolveAddr(newNode.IPAddr, remotes.port)
 
-		remote = &remoteNode{
+		remotes.ipAddrs[newNode.IPAddr] = &remoteNode{
 			addr: newAddr,
+			node: newNode,
 		}
-
-		remotes.ipAddrs[newNode.IPAddr] = remote
-	}
-
-	remote.node = newNode
-
-	for _, name := range newNode.Names {
-		_, reclaim := oldHas[name]
-		remotes.claimName(name, remote, local, reclaim, log)
 	}
 
 	return
-}
-
-func (remotes *remoteNodes) claimName(name string, remote *remoteNode, local *localNode, reclaim bool, log *Log) {
-	slice := remotes.names[name]
-
-	if len(slice) == 0 {
-		slice = append(slice, remote)
-	} else {
-		i := sort.Search(len(slice), func(i int) bool {
-			return slice[i].node.TimeNs <= remote.node.TimeNs
-		})
-
-		slice = append(slice[:i], append([]*remoteNode{remote}, slice[i:]...)...)
-	}
-
-	remotes.names[name] = slice
-
-	if !reclaim {
-		localHas := local.hasName(name)
-		if localHas || len(slice) > 1 {
-			var s string
-			for _, r := range slice {
-				s += " " + r.String()
-			}
-			if localHas {
-				log.Infof("other claims for local name %s:%s", name, s)
-			} else {
-				log.Infof("multiple claims for name %s:%s", name, s)
-			}
-		}
-	}
-}
-
-func (remotes *remoteNodes) disclaimName(name string, remote *remoteNode, local *localNode, reclaim bool, log *Log) {
-	slice := remotes.names[name]
-
-	if len(slice) == 1 {
-		if reclaim {
-			remotes.names[name] = slice[:0]
-		} else {
-			delete(remotes.names, name)
-		}
-	} else {
-		i := sort.Search(len(slice), func(i int) bool {
-			return slice[i].node.TimeNs <= remote.node.TimeNs
-		})
-
-		for slice[i] != remote {
-			i++
-		}
-
-		remotes.names[name] = append(slice[:i], slice[i+1:]...)
-	}
-
-	if !reclaim && !(local.hasName(name) && len(slice) > 0) {
-		log.Infof("claim for name %s was settled", name)
-	}
 }
 
 func (remotes *remoteNodes) expire(threshold time.Time, local *localNode, log *Log) {
@@ -327,10 +193,6 @@ func (remotes *remoteNodes) expire(threshold time.Time, local *localNode, log *L
 	}
 
 	for _, remote := range expired {
-		for _, name := range remote.node.Names {
-			remotes.disclaimName(name, remote, local, false, log)
-		}
-
 		delete(remotes.ipAddrs, remote.node.IPAddr)
 	}
 }
@@ -352,18 +214,6 @@ func (remotes *remoteNodes) nodes() (nodes []*Node) {
 
 	for _, remote := range remotes.ipAddrs {
 		nodes = append(nodes, remote.node)
-	}
-
-	return
-}
-
-func (remotes *remoteNodes) resolve(name string) (ip net.IP) {
-	remotes.lock.RLock()
-	defer remotes.lock.RUnlock()
-
-	slice := remotes.names[name]
-	if len(slice) >= 1 {
-		ip = slice[0].addr.IP
 	}
 
 	return

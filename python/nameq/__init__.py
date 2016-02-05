@@ -8,9 +8,7 @@ __all__ = [
 	"FeatureMonitor",
 	"log",
 	"remove_feature",
-	"remove_name",
 	"set_feature",
-	"set_name",
 ]
 
 import errno
@@ -24,17 +22,10 @@ import threading
 
 import inotify
 
-DEFAULT_NAMEDIR = "/etc/nameq/names"
 DEFAULT_FEATUREDIR = "/etc/nameq/features"
 DEFAULT_STATEDIR = "/run/nameq/state"
 
 log = logging.getLogger("nameq")
-
-def set_name(name, namedir=DEFAULT_NAMEDIR):
-	_create_config_file(namedir, name)
-
-def remove_name(name, namedir=DEFAULT_NAMEDIR):
-	_remove_config_file(namedir, name)
 
 def set_feature(name, value, featuredir=DEFAULT_FEATUREDIR):
 	_create_config_file(featuredir, name, json.dumps(value))

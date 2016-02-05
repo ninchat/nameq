@@ -10,44 +10,6 @@ import (
 	nameq "../go"
 )
 
-func name(_, command string) error {
-	var (
-		nameDir = nameq.DefaultNameDir
-		rm      = false
-	)
-
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] NAME\n\n", command)
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-
-	flag.StringVar(&nameDir, "namedir", nameDir, "dynamic hostname configuration location")
-	flag.BoolVar(&rm, "rm", rm, "remove hostname (instead of setting it)")
-
-	flag.Parse()
-
-	var (
-		name string
-	)
-
-	switch flag.NArg() {
-	case 1:
-		name = flag.Arg(0)
-
-	default:
-		flag.Usage()
-		os.Exit(2)
-	}
-
-	if rm {
-		return nameq.RemoveName(nameDir, name)
-	} else {
-		return nameq.SetName(nameDir, name)
-	}
-}
-
 func feature(_, command string) (err error) {
 	var (
 		featureDir = nameq.DefaultFeatureDir

@@ -30,12 +30,10 @@ func Test(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	var (
-		nameDir    = filepath.Join(dir, "conf/names")
 		featureDir = filepath.Join(dir, "conf/features")
 		stateDir   = filepath.Join(dir, "state")
 	)
 
-	os.MkdirAll(nameDir, 0700)
 	os.MkdirAll(featureDir, 0700)
 	os.MkdirAll(stateDir, 0700)
 
@@ -52,7 +50,6 @@ func Test(t *testing.T) {
 
 		service.Serve(ctx, &service.Params{
 			Addr:       localAddr,
-			NameDir:    nameDir,
 			Features:   "{ \"feature-1\": true, \"feature-2\": [1, 2, 3] }",
 			FeatureDir: featureDir,
 			StateDir:   stateDir,

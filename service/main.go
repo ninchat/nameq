@@ -11,25 +11,17 @@ import (
 // Default values for some Params.
 const (
 	DefaultPort       = 17106
-	DefaultNameDir    = nameq.DefaultNameDir
 	DefaultFeatureDir = nameq.DefaultFeatureDir
 	DefaultStateDir   = nameq.DefaultStateDir
-	DefaultResolvConf = "/etc/nameq/resolv.conf"
 )
 
 // Params of the service.
 type Params struct {
 	Addr         string // Required.
 	Port         int
-	Names        string
-	NameDir      string
 	Features     string
 	FeatureDir   string
 	StateDir     string
-	DNSAddr      string // Required if DNSTCP or DNSUDP is set.
-	DNSTCP       bool
-	DNSUDP       bool
-	ResolvConf   string
 	SendMode     *PacketMode         // Required.
 	ReceiveModes map[int]*PacketMode // Defaults to SendMode.
 	S3Creds      []byte
@@ -58,17 +50,11 @@ func Serve(ctx context.Context, p *Params) (err error) {
 	if p.Port == 0 {
 		p.Port = DefaultPort
 	}
-	if p.NameDir == "" {
-		p.NameDir = DefaultNameDir
-	}
 	if p.FeatureDir == "" {
 		p.FeatureDir = DefaultFeatureDir
 	}
 	if p.StateDir == "" {
 		p.StateDir = DefaultStateDir
-	}
-	if p.ResolvConf == "" {
-		p.ResolvConf = DefaultResolvConf
 	}
 	if p.ReceiveModes == nil {
 		p.ReceiveModes = map[int]*PacketMode{
@@ -95,19 +81,11 @@ func Serve(ctx context.Context, p *Params) (err error) {
 		doneTransmit   = make(chan struct{})
 	)
 
-	if err = initNameConfig(local, p.Names, p.NameDir, notify, log); err != nil {
-		return
-	}
-
 	if err = initFeatureConfig(local, p.Features, p.FeatureDir, notify, log); err != nil {
 		return
 	}
 
 	if err = initState(local, remotes, p.StateDir, notifyState, log); err != nil {
-		return
-	}
-
-	if err = initDNS(local, remotes, p.DNSAddr, p.DNSTCP, p.DNSUDP, p.ResolvConf, log); err != nil {
 		return
 	}
 

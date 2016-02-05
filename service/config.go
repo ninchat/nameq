@@ -17,7 +17,6 @@ const (
 )
 
 var (
-	nameRE    = regexp.MustCompile("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$")
 	featureRE = regexp.MustCompile("^[a-zA-Z0-9-_]+$")
 )
 
@@ -71,40 +70,6 @@ func scanConfig(dir string, re *regexp.Regexp, handler func(filenames []string),
 	}
 
 	handler(filenames)
-}
-
-func initNameConfig(local *localNode, arg, dir string, notify chan<- struct{}, log *Log) error {
-	argNames := strings.Fields(arg)
-
-	return watchConfig(dir, nameRE, log, func(filenames []string) {
-		names := make([]string, len(argNames))
-		copy(names, argNames)
-
-		for _, filename := range filenames {
-			name := strings.ToLower(filename)
-			found := false
-
-			for _, x := range names {
-				if x == name {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				names = append(names, name)
-			}
-		}
-
-		if local.updateNames(names) {
-			select {
-			case notify <- struct{}{}:
-			default:
-			}
-
-			log.Infof("local names: %s", strings.Join(names, " "))
-		}
-	})
 }
 
 func initFeatureConfig(local *localNode, arg, dir string, notify chan<- struct{}, log *Log) (err error) {
