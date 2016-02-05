@@ -3,6 +3,7 @@ export GOPATH	:= $(PWD)
 
 nameq: $(wildcard cmd/*.go service/*.go)
 	$(GO) get github.com/aarzilli/sandblast
+	$(GO) get github.com/aws/aws-sdk-go
 	$(GO) get github.com/go-ini/ini
 	$(GO) get github.com/jmespath/go-jmespath
 	$(GO) get github.com/miekg/dns
@@ -28,6 +29,7 @@ clean:
 	rm -f nameq
 	rm -rf pkg
 	rm -rf src/github.com/aarzilli/sandblast
+	rm -rf src/github.com/aws/aws-sdk-go
 	rm -rf src/github.com/go-ini/ini
 	rm -rf src/github.com/jmespath/go-jmespath
 	rm -rf src/github.com/miekg/dns
