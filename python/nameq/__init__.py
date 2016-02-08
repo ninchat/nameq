@@ -29,9 +29,22 @@ log = logging.getLogger("nameq")
 
 def set_feature(name, value, featuredir=DEFAULT_FEATUREDIR):
 	_create_config_file(featuredir, name, json.dumps(value))
+	return _FeatureRemover(featuredir, name)
 
 def remove_feature(name, featuredir=DEFAULT_FEATUREDIR):
 	_remove_config_file(featuredir, name)
+
+class _FeatureRemover(object):
+
+	def __init__(self, featuredir, name):
+		self.featuredir = featuredir
+		self.name = name
+
+	def __enter__(self):
+		pass
+
+	def __exit__(self, *exc):
+		remove_feature(self.name, self.featuredir)
 
 def _create_config_file(dirpath, name, data=""):
 	try:
