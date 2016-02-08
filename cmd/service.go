@@ -3,13 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
-	logging "log"
-	"log/syslog"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"golang.org/x/net/context"
 
@@ -17,12 +12,7 @@ import (
 )
 
 func serve(prog, command string) (err error) {
-	p := &service.Params{
-		Addr:       service.GuessAddr(),
-		Port:       service.DefaultPort,
-		FeatureDir: service.DefaultFeatureDir,
-		StateDir:   service.DefaultStateDir,
-	}
+	p := service.DefaultParams()
 
 	var (
 		secretFile string
@@ -69,25 +59,15 @@ func serve(prog, command string) (err error) {
 		os.Exit(2)
 	}
 
-	var logWriter io.Writer = os.Stderr
-
-	if syslogArg != "" {
-		if logWriter, err = syslog.Dial(syslogNet, syslogArg, syslog.LOG_ERR|syslog.LOG_DAEMON, prog); err != nil {
-			return
-		}
-	}
-
-	log := &p.Log
-	log.ErrorLogger = logging.New(logWriter, "ERROR: ", 0)
-	log.InfoLogger = logging.New(logWriter, "INFO: ", 0)
-
-	if debug {
-		log.DebugLogger = logging.New(logWriter, "DEBUG: ", 0)
+	err = p.Log.DefaultInit(syslogNet, syslogArg, prog, debug)
+	if err != nil {
+		println(err.Error())
+		return
 	}
 
 	secret, err := readFile(secretFd, secretFile)
 	if err != nil {
-		log.Error(err)
+		p.Log.Error(err)
 		return
 	}
 
@@ -97,27 +77,18 @@ func serve(prog, command string) (err error) {
 
 	p.S3Creds, err = readFile(s3CredFd, s3CredFile)
 	if err != nil {
-		log.Error(err)
+		p.Log.Error(err)
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals)
+	service.HandleSignals(cancel)
 
-	go func() {
-		for s := range signals {
-			switch s {
-			case syscall.SIGTERM, syscall.SIGINT:
-				cancel()
-				return
-			}
-		}
-	}()
-
-	if err = service.Serve(ctx, p); err != nil {
-		log.Error(err)
+	err = service.Serve(ctx, p)
+	if err != nil {
+		p.Log.Error(err)
 	}
 	return
 }

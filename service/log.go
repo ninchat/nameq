@@ -1,5 +1,12 @@
 package service
 
+import (
+	"io"
+	"log"
+	"log/syslog"
+	"os"
+)
+
 // Logger is a subset of the standard log.Logger.
 type Logger interface {
 	Print(v ...interface{})
@@ -11,6 +18,27 @@ type Log struct {
 	ErrorLogger Logger
 	InfoLogger  Logger
 	DebugLogger Logger
+}
+
+// DefaultInit configures at least the error and info loggers, targetting
+// stderr or syslog.
+func (l *Log) DefaultInit(network, addr, tag string, debug bool) (err error) {
+	var w io.Writer = os.Stderr
+
+	if addr != "" {
+		if w, err = syslog.Dial(network, addr, syslog.LOG_ERR|syslog.LOG_DAEMON, tag); err != nil {
+			return
+		}
+	}
+
+	l.ErrorLogger = log.New(w, "ERROR: ", 0)
+	l.InfoLogger = log.New(w, "INFO: ", 0)
+
+	if debug {
+		l.DebugLogger = log.New(w, "DEBUG: ", 0)
+	}
+
+	return
 }
 
 func (l *Log) Error(args ...interface{}) {

@@ -4,15 +4,13 @@ import (
 	"net"
 
 	"golang.org/x/net/context"
-
-	nameq "../go"
 )
 
 // Default values for some Params.
 const (
 	DefaultPort       = 17106
-	DefaultFeatureDir = nameq.DefaultFeatureDir
-	DefaultStateDir   = nameq.DefaultStateDir
+	DefaultFeatureDir = "/etc/nameq/features"
+	DefaultStateDir   = "/run/nameq/state"
 )
 
 // Params of the service.
@@ -30,6 +28,16 @@ type Params struct {
 	S3Prefix     string
 	S3DryRun     bool
 	Log          Log
+}
+
+// DefaultParams fills in some values.  Log is not initialized.
+func DefaultParams() *Params {
+	return &Params{
+		Addr:       GuessAddr(),
+		Port:       DefaultPort,
+		FeatureDir: DefaultFeatureDir,
+		StateDir:   DefaultStateDir,
+	}
 }
 
 // GuessAddr tries to find a local interface suitable for the Addr parameter.
