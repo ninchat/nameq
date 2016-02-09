@@ -3,7 +3,6 @@ package nameq
 
 import (
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -88,6 +87,11 @@ func (f *Feature) String() string {
 	return f.Name
 }
 
+// Logger is a subset of the standard log.Logger.
+type Logger interface {
+	Print(v ...interface{})
+}
+
 // FeatureMonitor watches the nameq runtime state for changes.
 type FeatureMonitor struct {
 	// Produces current information, followed by updates in real time.  There
@@ -98,7 +102,7 @@ type FeatureMonitor struct {
 	// Client code is free to set this member to nil after it has been closed.
 	Boot <-chan struct{}
 
-	logger  *log.Logger
+	logger  Logger
 	closed  chan struct{}
 	watcher *inotify.Watcher
 	queued  []*Feature
@@ -107,7 +111,7 @@ type FeatureMonitor struct {
 // NewFeatureMonitor watches the specified state directory, or the default
 // state directory if an empty string is given.  The directory must exist.  The
 // logger is used for I/O errors, unless nil.
-func NewFeatureMonitor(stateDir string, logger *log.Logger) (m *FeatureMonitor, err error) {
+func NewFeatureMonitor(stateDir string, logger Logger) (m *FeatureMonitor, err error) {
 	if stateDir == "" {
 		stateDir = DefaultStateDir
 	}
