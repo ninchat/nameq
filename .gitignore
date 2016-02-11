@@ -11,3 +11,4 @@
 /src/github.com/jmespath/go-jmespath/
 /src/golang.org/x/exp/
 /src/golang.org/x/net/
+/test/

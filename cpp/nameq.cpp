@@ -14,6 +14,7 @@
 
 #include <sys/inotify.h>
 
+#include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/scoped_array.hpp>
@@ -45,6 +46,49 @@ static int add_inotify_watch(int fd, const char *pathname, uint32_t mask)
 } // namespace
 
 namespace nameq {
+
+bool set_feature(const std::string &name, const std::string &data, const char *feature_dir) NAMEQ_NOEXCEPT
+{
+	try {
+		fs::path tmp_dir = feature_dir;
+		tmp_dir /= ".tmp";
+
+		fs::path tmp_filename = tmp_dir;
+		tmp_filename /= name;
+
+		fs::path filename = feature_dir;
+		filename /= name;
+
+		if (mkdir(tmp_dir.c_str(), 0700) < 0 && !fs::exists(tmp_dir))
+			throw;
+
+		fs::ofstream f;
+		f.exceptions(std::ios::failbit | std::ios::badbit);
+		f.open(tmp_filename);
+		f << data;
+		f.close();
+
+		fs::rename(tmp_filename, filename);
+	} catch (...) {
+		return false;
+	}
+
+	return true;
+}
+
+bool remove_feature(const std::string &name, const char *feature_dir) NAMEQ_NOEXCEPT
+{
+	try {
+		fs::path filename = feature_dir;
+		filename /= name;
+
+		remove(filename);
+	} catch (...) {
+		return false;
+	}
+
+	return true;
+}
 
 struct FeatureMonitor::Methods {
 	explicit Methods(Members &m) NAMEQ_NOEXCEPT:
@@ -221,7 +265,7 @@ struct FeatureMonitor::Methods {
 
 	void add_host(const fs::path &path)
 	{
-		std::ifstream stream(path.c_str());
+		fs::ifstream stream(path);
 		if (stream) {
 			stream.seekg(0, stream.end);
 			int size = stream.tellg();
@@ -236,11 +280,10 @@ struct FeatureMonitor::Methods {
 
 	void remove_host(const fs::path &path)
 	{
-		std::ifstream stream(path.c_str());
+		fs::ifstream stream(path);
 		if (!stream)
 			append_feature(path, std::string());
 	}
-
 
 	void append_feature(const fs::path &path, const std::string &data)
 	{

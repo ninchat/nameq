@@ -20,11 +20,73 @@
 
 /**
  */
+#define NAMEQ_DEFAULT_FEATURE_DIR "/etc/nameq/features"
+
+/**
+ */
 #define NAMEQ_DEFAULT_STATE_DIR "/run/nameq/state"
 
 /**
  */
 namespace nameq {
+
+/**
+ * Add or update a local feature.
+ *
+ * @param name
+ * @param data must be a valid JSON document.
+ * @param feature_dir
+ * @return true on success and false on error.
+ */
+bool set_feature(const std::string &name, const std::string &data, const char *feature_dir = NAMEQ_DEFAULT_FEATURE_DIR) NAMEQ_NOEXCEPT NAMEQ_EXPORT;
+
+/**
+ * Remove a local feature.  Redundant calls are ok.
+ *
+ * @param name
+ * @param feature_dir
+ * @return true if it was removed or it didn't exist, and false on error.
+ */
+bool remove_feature(const std::string &name, const char *feature_dir = NAMEQ_DEFAULT_FEATURE_DIR) NAMEQ_NOEXCEPT NAMEQ_EXPORT;
+
+/**
+ * Removes a local feature upon destruction.
+ */
+class FeatureContext {
+public:
+	/**
+	 * @param name is copied.
+	 * @param feature_dir is NOT copied, it must outlive the FeatureContext.
+	 */
+	FeatureContext(const std::string &name, const char *feature_dir = NAMEQ_DEFAULT_FEATURE_DIR):
+		m_name(name),
+		m_feature_dir(feature_dir)
+	{
+	}
+
+	~FeatureContext() NAMEQ_NOEXCEPT
+	{
+		remove_feature(m_name, m_feature_dir);
+	}
+
+	/**
+	 * Add or update a local feature.
+	 *
+	 * @param data must be a valid JSON document.
+	 * @return true on success and false on error.
+	 */
+	bool set(const std::string &data) NAMEQ_NOEXCEPT
+	{
+		return set_feature(m_name, data, m_feature_dir);
+	}
+
+private:
+	FeatureContext(const FeatureContext &);
+	FeatureContext &operator=(const FeatureContext &);
+
+	const std::string m_name;
+	const char *const m_feature_dir;
+};
 
 /**
  */
@@ -129,8 +191,8 @@ public:
 	void close() NAMEQ_NOEXCEPT NAMEQ_EXPORT;
 
 private:
-	explicit FeatureMonitor(const FeatureMonitor &);
-	void operator=(const FeatureMonitor &);
+	FeatureMonitor(const FeatureMonitor &);
+	FeatureMonitor &operator=(const FeatureMonitor &);
 
 	struct Methods;
 

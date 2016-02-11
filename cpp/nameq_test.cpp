@@ -4,15 +4,44 @@
 #include <cstdio>
 #include <vector>
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
 #include <poll.h>
 
 using namespace nameq;
 
-static void test()
+#define FEATURE_DIR "../test/features"
+#define STATE_DIR   "../test/state"
+
+static void test_context()
+{
+	const char *feature_name = "cpp";
+
+	boost::filesystem::path p = FEATURE_DIR;
+	p /= feature_name;
+
+	boost::filesystem::remove(p);
+
+	{
+		FeatureContext context(feature_name, FEATURE_DIR);
+
+		if (!context.set("[1, 2, 3]"))
+			throw "FeatureContext::set";
+
+		if (!boost::filesystem::exists(p))
+			throw "file was not created";
+	}
+
+	if (boost::filesystem::exists(p))
+		throw "file was not removed";
+}
+
+static void test_monitor()
 {
 	FeatureMonitor monitor;
 
-	if (monitor.init() < 0)
+	if (monitor.init(STATE_DIR) < 0)
 		throw "FeatureMonitor::init";
 
 	while (true) {
@@ -51,7 +80,8 @@ static void test()
 int main()
 {
 	try {
-		test();
+		test_context();
+		test_monitor();
 	} catch (const char *call) {
 		perror(call);
 		return 1;
