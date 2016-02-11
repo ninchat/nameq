@@ -58,7 +58,7 @@ public:
 	 * @param name is copied.
 	 * @param feature_dir is NOT copied, it must outlive the FeatureContext.
 	 */
-	FeatureContext(const std::string &name, const char *feature_dir = NAMEQ_DEFAULT_FEATURE_DIR):
+	explicit FeatureContext(const std::string &name, const char *feature_dir = NAMEQ_DEFAULT_FEATURE_DIR):
 		m_name(name),
 		m_feature_dir(feature_dir)
 	{
