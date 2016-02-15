@@ -63,6 +63,7 @@ def _create_config_file(dirpath, name, data=""):
 		f.write(data)
 		f.flush()
 		tmppath = f.name
+		os.chmod(tmppath, 0o644)
 		f.delete = False
 
 	ok = False
