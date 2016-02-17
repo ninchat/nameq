@@ -27,6 +27,8 @@ DEFAULT_STATEDIR = "/run/nameq/state"
 
 log = logging.getLogger("nameq")
 
+filename_encoding = "utf-8"
+
 def set_feature(name, value, featuredir=DEFAULT_FEATUREDIR):
 	_create_config_file(featuredir, name, json.dumps(value))
 	return _FeatureRemover(featuredir, name)
@@ -137,19 +139,19 @@ class _FeatureMonitor(object):
 
 	def _handle(self, event):
 		if event.mask & inotify.CREATE:
-			self._add_feature(event.name)
+			self._add_feature(event.name.decode(filename_encoding))
 
 		if event.mask & inotify.DELETE:
 			if event.wd == self._featuredir_wd:
-				self._remove_feature(event.name)
+				self._remove_feature(event.name.decode(filename_encoding))
 			else:
-				self._remove_host(event.wd, event.name)
+				self._remove_host(event.wd, event.name.decode(filename_encoding))
 
 		if event.mask & inotify.DELETE_SELF:
 			self.close()
 
 		if event.mask & inotify.MOVED_TO:
-			self._add_host(event.wd, event.name)
+			self._add_host(event.wd, event.name.decode(filename_encoding))
 
 	def _add_feature(self, name):
 		log.debug("adding feature %s", name)
