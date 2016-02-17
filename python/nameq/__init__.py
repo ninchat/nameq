@@ -68,10 +68,10 @@ def _create_config_file(dirpath, name, data=""):
 		os.chmod(f.name, 0o664)
 		os.rename(f.name, os.path.join(dirpath, name))
 
-		if hasattr(f, "delete"):
-			f.delete = False
-		else:
+		if hasattr(f, "_closer"):
 			f._closer.delete = False
+		else:
+			f.delete = False
 
 def _remove_config_file(dirpath, name):
 	try:
