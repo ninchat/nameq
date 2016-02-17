@@ -62,7 +62,7 @@ def _create_config_file(dirpath, name, data=""):
 	with tempfile.NamedTemporaryFile(mode="w", dir=tmpdirpath) as f:
 		f.write(data)
 		f.flush()
-		os.chmod(f.name)
+		os.chmod(f.name, 0o664)
 		os.link(f.name, os.path.join(dirpath, name))
 
 def _remove_config_file(dirpath, name):
