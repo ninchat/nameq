@@ -62,17 +62,8 @@ def _create_config_file(dirpath, name, data=""):
 	with tempfile.NamedTemporaryFile(mode="w", dir=tmpdirpath) as f:
 		f.write(data)
 		f.flush()
-		tmppath = f.name
-		os.chmod(tmppath, 0o644)
-		f.delete = False
-
-	ok = False
-	try:
-		os.rename(tmppath, os.path.join(dirpath, name))
-		ok = True
-	finally:
-		if not ok:
-			os.remove(tmppath)
+		os.chmod(tmppath)
+		os.link(f.name, os.path.join(dirpath, name))
 
 def _remove_config_file(dirpath, name):
 	try:
