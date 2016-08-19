@@ -1,12 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
-
-	"golang.org/x/net/context"
 
 	"../service"
 )

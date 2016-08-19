@@ -1,11 +1,10 @@
 package service
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"golang.org/x/net/context"
 )
 
 // HandleSignals cancels on termination or interrupt.

@@ -1,14 +1,13 @@
 package nameq_test
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	nameq "."
 	service "../service"

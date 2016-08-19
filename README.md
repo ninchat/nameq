@@ -73,7 +73,6 @@ in real time.
 
 - [Go](https://golang.org)
 - [github.com/aws/aws-sdk-go](https://github.com/aws/aws-sdk-go)
-- [golang.org/x/net/context](https://golang.org/x/net/context)
 
 See the library directories for C++ and Python dependencies.
 

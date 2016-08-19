@@ -1,9 +1,8 @@
 package service
 
 import (
+	"context"
 	"net"
-
-	"golang.org/x/net/context"
 )
 
 // Default values for some Params.
