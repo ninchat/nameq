@@ -77,6 +77,7 @@ def main():
     for entry in dump_hosts(bucket, prefix, set(args.feature), args.single, s3options):
         print(entry)
 
+
 if __name__ == "__main__":
     try:
         main()

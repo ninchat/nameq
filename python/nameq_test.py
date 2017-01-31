@@ -79,5 +79,6 @@ def delete_tree(root):
         for name in dirnames:
             os.rmdir(os.path.join(dirpath, name))
 
+
 if __name__ == "__main__":
     test()
