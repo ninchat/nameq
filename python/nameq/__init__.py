@@ -257,11 +257,15 @@ class FeatureMonitor(_FeatureMonitor):
     def __init__(self, changed=None, terminator=None, statedir=DEFAULT_STATEDIR, booted=None):
         super(FeatureMonitor, self).__init__(statedir)
 
-        if changed is not None:
-            self.changed = changed
+        try:
+            self._changed = changed or self.changed
+        except AttributeError:
+            self._changed = self._changed_not_implemented
 
-        if booted is not None:
-            self.booted = booted
+        try:
+            self._booted = booted or self.booted
+        except AttributeError:
+            self._booted = self._booted_not_implemented
 
         self.terminator = terminator
 
@@ -288,10 +292,10 @@ class FeatureMonitor(_FeatureMonitor):
         os.close(self._pipe[1])
         self._thread.join()
 
-    def changed(self, feature):
+    def _changed_not_implemented(self, feature):
         log.debug("FeatureMonitor.changed method not implemented")
 
-    def booted(self):
+    def _booted_not_implemented(self):
         log.debug("FeatureMonitor.booted method not implemented")
 
     def _iter(self):
@@ -328,7 +332,7 @@ class FeatureMonitor(_FeatureMonitor):
             self._deliver()
 
             try:
-                self.booted()
+                self._booted()
             except Exception:
                 log.exception("uncaught exception in FeatureMonitor.booted callback")
 
@@ -336,12 +340,12 @@ class FeatureMonitor(_FeatureMonitor):
                 self._handle(event)
                 self._deliver()
         finally:
-            self.changed(self.terminator)
+            self._changed(self.terminator)
 
     def _deliver(self):
         for feature in self._queued_features:
             try:
-                self.changed(feature)
+                self._changed(feature)
             except Exception:
                 log.exception("uncaught exception in FeatureMonitor.changed callback")
 
