@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -95,8 +96,12 @@ func initFeatureConfig(local *localNode, arg, dir string, notify chan<- struct{}
 
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
-				log.Error(err)
-				continue
+				if pathErr, ok := err.(*os.PathError); ok && pathErr.Err == os.ErrNotExist {
+					log.Info(err)
+				} else {
+					log.Error(err)
+					continue
+				}
 			}
 
 			if len(bytes.TrimSpace(data)) == 0 {
