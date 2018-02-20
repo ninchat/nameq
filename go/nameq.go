@@ -205,8 +205,6 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, boot chan<- struct{}, feat
 
 		select {
 		case e := <-input:
-			m.logger.Print("fsnotify: ", e)
-
 			if e.Name == featureDir {
 				// First level
 				if e.Op&fsnotify.Remove != 0 {
