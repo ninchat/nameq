@@ -6,9 +6,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
-	"golang.org/x/exp/inotify"
+	"github.com/fsnotify/fsnotify"
 )
 
 const (
@@ -104,7 +105,7 @@ type FeatureMonitor struct {
 
 	logger  Logger
 	closed  chan struct{}
-	watcher *inotify.Watcher
+	watcher *fsnotify.Watcher
 	queued  []*Feature
 }
 
@@ -133,12 +134,12 @@ func NewFeatureMonitor(stateDir string, logger Logger) (m *FeatureMonitor, err e
 		return
 	}
 
-	watcher, err := inotify.NewWatcher()
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return
 	}
 
-	if err = watcher.AddWatch(featureDir, inotify.IN_ONLYDIR|inotify.IN_CREATE|inotify.IN_DELETE|inotify.IN_DELETE_SELF); err != nil {
+	if err = watcher.Add(featureDir); err != nil {
 		watcher.Close()
 		return
 	}
@@ -181,8 +182,11 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, boot chan<- struct{}, feat
 	defer m.watcher.Close()
 	defer close(c)
 
+	// Stripping this prefix from watched names converts them into relative paths
+	namePrefixLen := len(featureDir) + 1 // separator
+
 	for {
-		input := m.watcher.Event
+		input := m.watcher.Events
 		output := c
 		var outstanding *Feature
 
@@ -201,23 +205,31 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, boot chan<- struct{}, feat
 
 		select {
 		case e := <-input:
-			if (e.Mask & inotify.IN_CREATE) != 0 {
-				m.addFeature(e.Name)
+			m.logger.Print("fsnotify: ", e)
+
+			if e.Name == featureDir {
+				// First level
+				if e.Op&fsnotify.Remove != 0 {
+					return
+				}
+			} else {
+				relName := e.Name[namePrefixLen:]
+				if !strings.ContainsRune(relName, filepath.Separator) {
+					// Second level
+					m.addFeature(e.Name)
+				} else {
+					// Deeper level
+					hostname := filepath.Base(e.Name)
+					if e.Op&fsnotify.Create != 0 {
+						m.addHost(hostname, e.Name)
+					}
+					if e.Op&fsnotify.Remove != 0 {
+						m.removeHost(hostname, e.Name)
+					}
+				}
 			}
 
-			if (e.Mask&inotify.IN_DELETE) != 0 && filepath.Dir(e.Name) != featureDir {
-				m.removeHost(filepath.Base(e.Name), e.Name)
-			}
-
-			if (e.Mask & inotify.IN_DELETE_SELF) != 0 {
-				return
-			}
-
-			if (e.Mask & inotify.IN_MOVED_TO) != 0 {
-				m.addHost(filepath.Base(e.Name), e.Name)
-			}
-
-		case err := <-m.watcher.Error:
+		case err := <-m.watcher.Errors:
 			m.log(err)
 
 		case output <- outstanding:
@@ -230,7 +242,7 @@ func (m *FeatureMonitor) watchLoop(c chan<- *Feature, boot chan<- struct{}, feat
 }
 
 func (m *FeatureMonitor) addFeature(dir string) {
-	if err := m.watcher.AddWatch(dir, inotify.IN_ONLYDIR|inotify.IN_DELETE|inotify.IN_MOVED_TO); err != nil {
+	if err := m.watcher.Add(dir); err != nil {
 		m.log(err)
 		return
 	}

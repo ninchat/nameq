@@ -7,8 +7,8 @@
 /pkg/
 /python/build/
 /src/github.com/aws/aws-sdk-go/
+/src/github.com/fsnotify/fsnotify/
 /src/github.com/go-ini/ini/
 /src/github.com/jmespath/go-jmespath/
-/src/golang.org/x/exp/
-/src/golang.org/x/net/
+/src/golang.org/x/sys/
 /test/

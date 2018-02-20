@@ -10,11 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/exp/inotify"
-)
-
-const (
-	watchEvents = inotify.IN_ATTRIB | inotify.IN_CLOSE_WRITE | inotify.IN_CREATE | inotify.IN_DELETE | inotify.IN_MOVED_FROM | inotify.IN_MOVED_TO
+	"github.com/fsnotify/fsnotify"
 )
 
 var (
@@ -26,12 +22,12 @@ func watchConfig(dir string, re *regexp.Regexp, log *Log, handler func(filenames
 		return
 	}
 
-	w, err := inotify.NewWatcher()
+	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return
 	}
 
-	if err = w.AddWatch(dir, inotify.IN_ONLYDIR|watchEvents); err != nil {
+	if err = w.Add(dir); err != nil {
 		w.Close()
 		return
 	}
@@ -43,13 +39,13 @@ func watchConfig(dir string, re *regexp.Regexp, log *Log, handler func(filenames
 	return
 }
 
-func scanConfigLoop(dir string, re *regexp.Regexp, handler func(filenames []string), w *inotify.Watcher, log *Log) {
+func scanConfigLoop(dir string, re *regexp.Regexp, handler func(filenames []string), w *fsnotify.Watcher, log *Log) {
 	for {
 		select {
-		case <-w.Event:
+		case <-w.Events:
 			scanConfig(dir, re, handler, log)
 
-		case err := <-w.Error:
+		case err := <-w.Errors:
 			log.Error(err)
 		}
 	}
