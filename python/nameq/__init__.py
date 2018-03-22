@@ -93,6 +93,12 @@ class Feature(object):
        string of the host where the feature exists) and 'value' (None if
        feature was removed)."""
 
+    __slots__ = (
+        "name",
+        "host",
+        "value",
+    )
+
     def __init__(self, name, host, value=None):
         self.name = name
         self.host = host
