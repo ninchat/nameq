@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	nameq "."
-	service "../service"
+	nameq "github.com/ninchat/nameq/go"
+	"github.com/ninchat/nameq/service"
 )
 
 var (

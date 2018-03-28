@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"../service"
+	"github.com/ninchat/nameq/service"
 )
 
 func serve(prog, command string) (err error) {

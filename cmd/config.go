@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	nameq "../go"
+	nameq "github.com/ninchat/nameq/go"
 )
 
 func feature(_, command string) (err error) {

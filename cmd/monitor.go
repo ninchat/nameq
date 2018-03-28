@@ -13,7 +13,7 @@ import (
 	"time"
 	"unicode"
 
-	nameq "../go"
+	nameq "github.com/ninchat/nameq/go"
 )
 
 var (

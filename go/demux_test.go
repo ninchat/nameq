@@ -3,7 +3,7 @@ package nameq_test
 import (
 	"testing"
 
-	"."
+	nameq "github.com/ninchat/nameq/go"
 )
 
 func TestDemux(t *testing.T) {

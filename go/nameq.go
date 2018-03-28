@@ -1,4 +1,5 @@
-// Application support library for using the information exported by nameq.
+// Package nameq is an application support library for using the information
+// exported by the nameq service.
 package nameq
 
 import (

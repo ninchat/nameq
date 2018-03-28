@@ -71,16 +71,15 @@ in real time.
 
 ## Dependencies
 
-- [Go](https://golang.org)
-- [github.com/aws/aws-sdk-go](https://github.com/aws/aws-sdk-go)
-
-See the library directories for C++ and Python dependencies.
+See [go.mod](go.mod) for Go dependencies, and the library directories for C++
+and Python dependencies.
 
 
 ## Building
 
-	$ git submodule init
-	$ make
+Using vgo (it's not required, though):
+
+	$ vgo build -o nameq ./cmd
 
 
 ## Usage
