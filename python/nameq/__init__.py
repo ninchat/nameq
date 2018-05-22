@@ -136,7 +136,7 @@ class _FeatureMonitor(object):
 
         try:
             featurenames = os.listdir(self._featuredir)
-        except Exception as e:
+        except Exception:
             log.exception("listing %s", self._featuredir)
         else:
             for featurename in featurenames:
