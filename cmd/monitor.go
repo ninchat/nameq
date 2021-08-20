@@ -46,7 +46,7 @@ func monitorFeatures(prog, command string) (err error) {
 		os.Exit(2)
 	}
 
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-signals
