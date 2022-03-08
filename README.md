@@ -77,9 +77,7 @@ and Python dependencies.
 
 ## Building
 
-Using vgo (it's not required, though):
-
-	$ vgo build -o nameq ./cmd
+	$ go build ./cmd/nameq
 
 
 ## Usage
