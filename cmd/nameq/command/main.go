@@ -1,13 +1,12 @@
-package main
+package command
 
 import (
 	"fmt"
 	"os"
-	"path"
 )
 
-func main() {
-	prog := path.Base(os.Args[0])
+func Main() {
+	prog := os.Args[0]
 
 	if len(os.Args) >= 2 {
 		subprog := os.Args[1]
