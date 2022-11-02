@@ -60,7 +60,7 @@ bool set_feature(const std::string &name, const std::string &data, const char *f
 		filename /= name;
 
 		if (mkdir(tmp_dir.c_str(), 0700) < 0 && !fs::exists(tmp_dir))
-			throw;
+			return false;
 
 		fs::ofstream f;
 		f.exceptions(std::ios::failbit | std::ios::badbit);
